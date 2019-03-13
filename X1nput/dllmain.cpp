@@ -52,6 +52,9 @@
 #define ERROR_DEVICE_NOT_CONNECTED		1167
 #define ERROR_SUCCESS					0
 
+#define LEFT_TRIGGER_STRENGTH			0.25f
+#define RIGHT_TRIGGER_STRENGTH			0.25f
+
 std::unique_ptr<DirectX::GamePad> m_gamePad;
 
 bool initialized = false;
@@ -188,7 +191,7 @@ DLLEXPORT DWORD WINAPI XInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRAT
 	
 	if (state.connected) {
 
-		m_gamePad->SetVibration(dwUserIndex, pVibration->wLeftMotorSpeed / 65535.0f, pVibration->wRightMotorSpeed / 65535.0f, pVibration->wLeftMotorSpeed / 65535.0f, pVibration->wRightMotorSpeed / 65535.0f);
+		m_gamePad->SetVibration(dwUserIndex, pVibration->wLeftMotorSpeed / 65535.0f, pVibration->wRightMotorSpeed / 65535.0f, pVibration->wLeftMotorSpeed / 65535.0f * LEFT_TRIGGER_STRENGTH, pVibration->wRightMotorSpeed / 65535.0f * RIGHT_TRIGGER_STRENGTH);
 
 		return ERROR_SUCCESS;
 	}
