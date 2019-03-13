@@ -43,6 +43,7 @@
 
 
 #define XINPUT_DEVTYPE_GAMEPAD          0x01
+#define XINPUT_DEVSUBTYPE_GAMEPAD       0x01
 
 #define BATTERY_TYPE_DISCONNECTED		0x00
 
@@ -207,22 +208,13 @@ DLLEXPORT DWORD WINAPI XInputGetCapabilities(_In_ DWORD dwUserIndex, _In_ DWORD 
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 
 	if (state.connected) {
-		// TODO: most likely not needed, but might be nice
+		
+		pCapabilities->Type = XINPUT_DEVTYPE_GAMEPAD;
 
-		/*
-		XINPUT_CAPABILITIES x;
-
-		x.Type = XINPUT_DEVTYPE_GAMEPAD;
-
-		WORD flags = 0;
-
-		if (state.gamepadType == state.GAMEPAD) {
-			flags += XINPUT_CAPS_FFB_SUPPORTED;
-			flags += XINPUT_CAPS_PMD_SUPPORTED;
-		}
-
-		x.Flags = flags;
-		*/
+		pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
+				
+		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
+		
 		return ERROR_SUCCESS;
 	}
 	else
