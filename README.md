@@ -4,6 +4,8 @@ X1nput is Xinput rewritten using the [Windows.Gaming.Input API](https://docs.mic
 
 There's no way for the game to know whether the controller supports impulse triggers using Xinput API, so this DLL just converts normal vibrations to trigger vibrations.
 
+**Windows.Gaming.Input API requires Windows 10 to work.**
+
 I'll try to improve the code and add a way to customize strength of the vibrations, but I'm hoping someone could learn from this code and write do something useful with it.
 
 ### Installation
