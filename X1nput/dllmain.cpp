@@ -4,6 +4,7 @@
 */
 
 #include "stdafx.h"
+#include <tchar.h>
 
 #define XINPUT_GAMEPAD_DPAD_UP          0x0001
 #define XINPUT_GAMEPAD_DPAD_DOWN        0x0002
@@ -53,12 +54,30 @@
 #define ERROR_DEVICE_NOT_CONNECTED		1167
 #define ERROR_SUCCESS					0
 
-#define LEFT_TRIGGER_STRENGTH			0.25f
-#define RIGHT_TRIGGER_STRENGTH			0.25f
+#define CONFIG_PATH						_T(".\\X1nput.ini")
 
 std::unique_ptr<DirectX::GamePad> m_gamePad;
 
+float RTriggerStrength = 0.25f;
+float LTriggerStrength = 0.25f;
+float RMotorStrength = 1.0f;
+float LMotorStrength = 1.0f;
+
+bool TriggerSwap = false;
+bool MotorSwap = false;
+
 bool initialized = false;
+
+LPTSTR GetConfigString(LPCSTR AppName, LPCSTR KeyName, LPCSTR Default) {
+	TCHAR result[256];
+	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
+	return result;
+}
+
+bool StringToBool(LPTSTR value) {
+	return value == "True" || value == "true";
+}
+
 
 //
 // Structures used by XInput APIs
@@ -132,6 +151,15 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 {
 	if (!initialized) {
 		m_gamePad = std::make_unique<DirectX::GamePad>();
+
+		LTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("LeftStrength"), _T("0.25")));
+		RTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("RightStrength"), _T("0.25")));
+		TriggerSwap = StringToBool(GetConfigString(_T("Triggers"), _T("SwapSides"), _T("False")));
+
+		LMotorStrength = atof(GetConfigString(_T("Motors"), _T("LeftStrength"), _T("1.0")));
+		RMotorStrength = atof(GetConfigString(_T("Motors"), _T("RightStrength"), _T("1.0")));
+		MotorSwap = StringToBool(GetConfigString(_T("Motors"), _T("SwapSides"), _T("False")));
+
 		initialized = true;
 	}
 
@@ -192,7 +220,16 @@ DLLEXPORT DWORD WINAPI XInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRAT
 	
 	if (state.connected) {
 
-		m_gamePad->SetVibration(dwUserIndex, pVibration->wLeftMotorSpeed / 65535.0f, pVibration->wRightMotorSpeed / 65535.0f, pVibration->wLeftMotorSpeed / 65535.0f * LEFT_TRIGGER_STRENGTH, pVibration->wRightMotorSpeed / 65535.0f * RIGHT_TRIGGER_STRENGTH);
+		float LSpeed = pVibration->wLeftMotorSpeed / 65535.0f;
+		float RSpeed = pVibration->wRightMotorSpeed / 65535.0f;
+
+		float LMotorSpeed = MotorSwap ? RSpeed * LMotorStrength : LSpeed * LMotorStrength;
+		float RMotorSpeed = MotorSwap ? LSpeed * RMotorStrength : RSpeed * RMotorStrength;
+
+		float LTriggerSpeed = TriggerSwap ? RSpeed * LTriggerStrength : LSpeed * LTriggerStrength;
+		float RTriggerSpeed = TriggerSwap ? LSpeed * RTriggerStrength : RSpeed * RTriggerStrength;
+
+		m_gamePad->SetVibration(dwUserIndex, LMotorSpeed, RMotorSpeed, LTriggerSpeed, RTriggerSpeed);
 
 		return ERROR_SUCCESS;
 	}
