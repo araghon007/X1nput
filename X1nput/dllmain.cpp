@@ -66,8 +66,6 @@ float LMotorStrength = 1.0f;
 bool TriggerSwap = false;
 bool MotorSwap = false;
 
-bool initialized = false;
-
 LPTSTR GetConfigString(LPCSTR AppName, LPCSTR KeyName, LPCSTR Default) {
 	TCHAR result[256];
 	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
@@ -78,6 +76,82 @@ bool StringToBool(LPTSTR value) {
 	return value == "True" || value == "true";
 }
 
+/*
+	Thanks to CookiePLMonster for suggesting this.
+	I definitely should have asked how to implement it, but oh well, there's still a lot of time for fixing.
+	Oddly enough, this seemed to have fixed HITMAN 2 once again. That game is really cursed. Before, only debug version of the DLL worked.
+*/
+#pragma region InitOnceExecuteOnce
+
+// Global variable for one-time initialization structure
+INIT_ONCE g_InitOnce = INIT_ONCE_STATIC_INIT; // Static initialization
+
+// Initialization callback function 
+BOOL CALLBACK InitHandleFunction(
+	PINIT_ONCE InitOnce,
+	PVOID Parameter,
+	PVOID *lpContext);
+
+// Returns a handle to an event object that is created only once
+HANDLE InitializeGamepad()
+{
+	PVOID lpContext;
+	BOOL  bStatus;
+
+	// Execute the initialization callback function 
+	bStatus = InitOnceExecuteOnce(&g_InitOnce,          // One-time initialization structure
+		InitHandleFunction,   // Pointer to initialization callback function
+		NULL,                 // Optional parameter to callback function (not used)
+		&lpContext);          // Receives pointer to event object stored in g_InitOnce
+
+// InitOnceExecuteOnce function succeeded. Return event object.
+	if (bStatus)
+	{
+		return (HANDLE)lpContext;
+	}
+	else
+	{
+		return (INVALID_HANDLE_VALUE);
+	}
+}
+
+// Initialization callback function that creates the event object 
+BOOL CALLBACK InitHandleFunction(
+	PINIT_ONCE InitOnce,        // Pointer to one-time initialization structure        
+	PVOID Parameter,            // Optional parameter passed by InitOnceExecuteOnce            
+	PVOID *lpContext)           // Receives pointer to event object           
+{
+	HANDLE hEvent;
+
+	// Create event object
+	hEvent = CreateEvent(NULL,    // Default security descriptor
+		TRUE,    // Manual-reset event object
+		TRUE,    // Initial state of object is signaled 
+		NULL);   // Object is unnamed
+
+// Event object creation failed.
+	if (NULL == hEvent)
+	{
+		return FALSE;
+	}
+	// Event object creation succeeded.
+	else
+	{
+		m_gamePad = std::make_unique<DirectX::GamePad>();
+
+		LTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("LeftStrength"), _T("0.25")));
+		RTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("RightStrength"), _T("0.25")));
+		TriggerSwap = StringToBool(GetConfigString(_T("Triggers"), _T("SwapSides"), _T("False")));
+
+		LMotorStrength = atof(GetConfigString(_T("Motors"), _T("LeftStrength"), _T("1.0")));
+		RMotorStrength = atof(GetConfigString(_T("Motors"), _T("RightStrength"), _T("1.0")));
+		MotorSwap = StringToBool(GetConfigString(_T("Motors"), _T("SwapSides"), _T("False")));
+		*lpContext = hEvent;
+		return TRUE;
+	}
+}
+
+#pragma endregion
 
 //
 // Structures used by XInput APIs
@@ -149,19 +223,7 @@ DLLEXPORT BOOL APIENTRY DllMain( HMODULE hModule,
 
 DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState)
 {
-	if (!initialized) {
-		m_gamePad = std::make_unique<DirectX::GamePad>();
-
-		LTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("LeftStrength"), _T("0.25")));
-		RTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("RightStrength"), _T("0.25")));
-		TriggerSwap = StringToBool(GetConfigString(_T("Triggers"), _T("SwapSides"), _T("False")));
-
-		LMotorStrength = atof(GetConfigString(_T("Motors"), _T("LeftStrength"), _T("1.0")));
-		RMotorStrength = atof(GetConfigString(_T("Motors"), _T("RightStrength"), _T("1.0")));
-		MotorSwap = StringToBool(GetConfigString(_T("Motors"), _T("SwapSides"), _T("False")));
-
-		initialized = true;
-	}
+	InitializeGamepad();
 
 	auto state = m_gamePad->GetState(dwUserIndex);
 
@@ -216,6 +278,7 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 
 DLLEXPORT DWORD WINAPI XInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION *pVibration) 
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	
 	if (state.connected) {
@@ -242,6 +305,7 @@ DLLEXPORT DWORD WINAPI XInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRAT
 
 DLLEXPORT DWORD WINAPI XInputGetCapabilities(_In_ DWORD dwUserIndex, _In_ DWORD dwFlags, _Out_ XINPUT_CAPABILITIES *pCapabilities) 
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 
 	if (state.connected) {
@@ -266,6 +330,7 @@ DLLEXPORT void WINAPI XInputEnable(_In_ BOOL enable)
 
 DLLEXPORT DWORD WINAPI XInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
@@ -278,6 +343,7 @@ DLLEXPORT DWORD WINAPI XInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* 
 
 DLLEXPORT DWORD WINAPI XInputGetBatteryInformation(_In_ DWORD dwUserIndex, _In_ BYTE devType, _Out_ XINPUT_BATTERY_INFORMATION *pBatteryInformation)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
@@ -290,6 +356,7 @@ DLLEXPORT DWORD WINAPI XInputGetBatteryInformation(_In_ DWORD dwUserIndex, _In_ 
 
 DLLEXPORT DWORD WINAPI XInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
@@ -302,6 +369,7 @@ DLLEXPORT DWORD WINAPI XInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, P
 
 DLLEXPORT DWORD WINAPI XInputGetStateEx(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
@@ -314,6 +382,7 @@ DLLEXPORT DWORD WINAPI XInputGetStateEx(_In_ DWORD dwUserIndex, _Out_ XINPUT_STA
 
 DLLEXPORT DWORD WINAPI XInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DWORD dwFlag, _In_ LPVOID pVoid)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
@@ -326,6 +395,7 @@ DLLEXPORT DWORD WINAPI XInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DWO
 
 DLLEXPORT DWORD XInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
@@ -338,6 +408,7 @@ DLLEXPORT DWORD XInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 
 DLLEXPORT DWORD XInputPowerOffController(_In_ DWORD dwUserIndex)
 {
+	InitializeGamepad();
 	auto state = m_gamePad->GetCapabilities(dwUserIndex);
 	if (state.connected) {
 		return ERROR_SUCCESS;
