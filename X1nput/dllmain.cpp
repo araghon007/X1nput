@@ -77,8 +77,7 @@ bool StringToBool(LPTSTR value) {
 }
 
 /*
-	Thanks to CookiePLMonster for suggesting this.
-	I definitely should have asked how to implement it, but oh well, there's still a lot of time for fixing.
+	Thanks to CookiePLMonster for suggesting and helping with this.
 	Oddly enough, this seemed to have fixed HITMAN 2 once again. That game is really cursed. Before, only debug version of the DLL worked.
 */
 #pragma region InitOnceExecuteOnce
@@ -93,25 +92,24 @@ BOOL CALLBACK InitHandleFunction(
 	PVOID *lpContext);
 
 // Returns a handle to an event object that is created only once
-HANDLE InitializeGamepad()
+void InitializeGamepad()
 {
 	PVOID lpContext;
 	BOOL  bStatus;
 
-	// Execute the initialization callback function 
+	// Execute the initialization callback function
 	bStatus = InitOnceExecuteOnce(&g_InitOnce,          // One-time initialization structure
 		InitHandleFunction,   // Pointer to initialization callback function
 		NULL,                 // Optional parameter to callback function (not used)
 		&lpContext);          // Receives pointer to event object stored in g_InitOnce
 
-// InitOnceExecuteOnce function succeeded. Return event object.
 	if (bStatus)
 	{
-		return (HANDLE)lpContext;
+		// InitOnceExecuteOnce function succeeded
 	}
 	else
 	{
-		return (INVALID_HANDLE_VALUE);
+
 	}
 }
 
@@ -121,34 +119,16 @@ BOOL CALLBACK InitHandleFunction(
 	PVOID Parameter,            // Optional parameter passed by InitOnceExecuteOnce            
 	PVOID *lpContext)           // Receives pointer to event object           
 {
-	HANDLE hEvent;
+	m_gamePad = std::make_unique<DirectX::GamePad>();
 
-	// Create event object
-	hEvent = CreateEvent(NULL,    // Default security descriptor
-		TRUE,    // Manual-reset event object
-		TRUE,    // Initial state of object is signaled 
-		NULL);   // Object is unnamed
+	LTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("LeftStrength"), _T("0.25")));
+	RTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("RightStrength"), _T("0.25")));
+	TriggerSwap = StringToBool(GetConfigString(_T("Triggers"), _T("SwapSides"), _T("False")));
 
-// Event object creation failed.
-	if (NULL == hEvent)
-	{
-		return FALSE;
-	}
-	// Event object creation succeeded.
-	else
-	{
-		m_gamePad = std::make_unique<DirectX::GamePad>();
-
-		LTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("LeftStrength"), _T("0.25")));
-		RTriggerStrength = atof(GetConfigString(_T("Triggers"), _T("RightStrength"), _T("0.25")));
-		TriggerSwap = StringToBool(GetConfigString(_T("Triggers"), _T("SwapSides"), _T("False")));
-
-		LMotorStrength = atof(GetConfigString(_T("Motors"), _T("LeftStrength"), _T("1.0")));
-		RMotorStrength = atof(GetConfigString(_T("Motors"), _T("RightStrength"), _T("1.0")));
-		MotorSwap = StringToBool(GetConfigString(_T("Motors"), _T("SwapSides"), _T("False")));
-		*lpContext = hEvent;
-		return TRUE;
-	}
+	LMotorStrength = atof(GetConfigString(_T("Motors"), _T("LeftStrength"), _T("1.0")));
+	RMotorStrength = atof(GetConfigString(_T("Motors"), _T("RightStrength"), _T("1.0")));
+	MotorSwap = StringToBool(GetConfigString(_T("Motors"), _T("SwapSides"), _T("False")));
+	return TRUE;
 }
 
 #pragma endregion
