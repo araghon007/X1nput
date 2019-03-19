@@ -27,6 +27,16 @@ If you're unsure which DLLs does the game use, you can use [Process Explorer](ht
 * Press CTRL + D to view DLLs used by the selected application.
 * Usually, if the application is using SYSWOW64, you should use the 32-bit DLLs.
 
+### Configuration
+
+1. Copy X1nput.ini into the same folder as the DLL.
+
+2. To adjust vibration strength of motors and triggers, change strength for the corresponding side in X1nput.ini (e.g. LeftStrength=0.5).
+
+3. To swap which side vibrates, change SwapSides to true (SwapSides=True).
+
+4. To reload configuration in-game without having to restart, press both shoulder buttons and the start (menu) button.
+
 ### Buidling
 
 1. Open X1nput.sln using Visual Studio 2015 or higher.
