@@ -85,17 +85,17 @@ bool MotorSwap = false;
 
 // Config related methods, thanks to xiaohe521, https://www.codeproject.com/Articles/10809/A-Small-Class-to-Read-INI-File
 #pragma region Config loading
-float GetConfigFloat(LPCSTR AppName, LPCSTR KeyName, LPCSTR Default) {
+float GetConfigFloat(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
 	TCHAR result[256];
 	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
-	return atof(result);
+	return _tstof(result);
 }
 
-bool GetConfigBool(LPCSTR AppName, LPCSTR KeyName, LPCSTR Default) {
+bool GetConfigBool(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
 	TCHAR result[256];
 	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
 	// Thanks to CookiePLMonster for recommending _tcsicmp to me
-	return _tcsicmp(result, "true") == 0 ? true : false;
+	return _tcsicmp(result, _T("true")) == 0 ? true : false;
 }
 
 void GetConfig() {
