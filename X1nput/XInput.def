@@ -1,6 +1,5 @@
 LIBRARY   XInput  
 EXPORTS  
-   DllMain		   					@1  
    XInputGetState					@2
    XInputSetState					@3
    XInputGetCapabilities			@4

@@ -51,9 +51,6 @@
 #define MAX_PLAYER_COUNT				8
 #define XUSER_INDEX_ANY					0x000000FF
 
-#define ERROR_DEVICE_NOT_CONNECTED		1167
-#define ERROR_SUCCESS					0
-
 #define CONFIG_PATH						_T(".\\X1nput.ini")
 
 
@@ -73,8 +70,6 @@ EventRegistrationToken gRemovedToken;
 
 int mMostRecentGamepad = 0;
 
-HRESULT hr;
-
 float RTriggerStrength = 0.25f;
 float LTriggerStrength = 0.25f;
 float RMotorStrength = 1.0f;
@@ -85,17 +80,17 @@ bool MotorSwap = false;
 
 // Config related methods, thanks to xiaohe521, https://www.codeproject.com/Articles/10809/A-Small-Class-to-Read-INI-File
 #pragma region Config loading
-float GetConfigFloat(LPCSTR AppName, LPCSTR KeyName, LPCSTR Default) {
+float GetConfigFloat(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
 	TCHAR result[256];
 	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
-	return atof(result);
+	return _tstof(result);
 }
 
-bool GetConfigBool(LPCSTR AppName, LPCSTR KeyName, LPCSTR Default) {
+bool GetConfigBool(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
 	TCHAR result[256];
 	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
 	// Thanks to CookiePLMonster for recommending _tcsicmp to me
-	return _tcsicmp(result, "true") == 0 ? true : false;
+	return _tcsicmp(result, _T("true")) == 0 ? true : false;
 }
 
 void GetConfig() {
@@ -182,7 +177,7 @@ static HRESULT UserChanged(ABI::Windows::Gaming::Input::IGameController*, ABI::W
 void ScanGamePads()
 {
 	ComPtr<IVectorView<Gamepad*>> pads;
-	hr = gamepadStatics->get_Gamepads(&pads);
+	HRESULT hr = gamepadStatics->get_Gamepads(&pads);
 	assert(SUCCEEDED(hr));
 
 	unsigned int count = 0;
@@ -198,7 +193,7 @@ void ScanGamePads()
 			for (; k < count; ++k)
 			{
 				ComPtr<IGamepad> pad;
-				HRESULT hr = pads->GetAt(k, pad.GetAddressOf());
+				hr = pads->GetAt(k, pad.GetAddressOf());
 				if (SUCCEEDED(hr) && (pad == gamepads[j]))
 				{
 					break;
@@ -208,7 +203,7 @@ void ScanGamePads()
 			if (k >= count)
 			{
 				ComPtr<IGameController> ctrl;
-				HRESULT hr = gamepads[j].As(&ctrl);
+				hr = gamepads[j].As(&ctrl);
 				if (SUCCEEDED(hr) && ctrl)
 				{
 					(void)ctrl->remove_UserChanged(mUserChangeToken[j]);
@@ -298,27 +293,16 @@ BOOL CALLBACK InitHandleFunction(
 	PVOID Parameter,
 	PVOID *lpContext);
 
-// Returns a handle to an event object that is created only once
-HANDLE InitializeGamepad()
+bool InitializeGamepad()
 {
-	PVOID lpContext;
-	BOOL  bStatus;
-
 	// Execute the initialization callback function 
-	bStatus = InitOnceExecuteOnce(&g_InitOnce,          // One-time initialization structure
+	BOOL bStatus = InitOnceExecuteOnce(&g_InitOnce,          // One-time initialization structure
 		InitHandleFunction,   // Pointer to initialization callback function
 		NULL,                 // Optional parameter to callback function (not used)
-		&lpContext);          // Receives pointer to event object stored in g_InitOnce
+		NULL);          // Receives pointer to event object stored in g_InitOnce
 
-// InitOnceExecuteOnce function succeeded. Return event object.
-	if (bStatus)
-	{
-		return (HANDLE)lpContext;
-	}
-	else
-	{
-		return (INVALID_HANDLE_VALUE);
-	}
+// InitOnceExecuteOnce function succeeded.
+	return bStatus != FALSE;
 }
 
 // Initialization callback function that creates the event object 
@@ -327,7 +311,7 @@ BOOL CALLBACK InitHandleFunction(
 	PVOID Parameter,            // Optional parameter passed by InitOnceExecuteOnce            
 	PVOID *lpContext)           // Receives pointer to event object           
 {
-	hr = RoInitialize(RO_INIT_MULTITHREADED);
+	HRESULT hr = RoInitialize(RO_INIT_MULTITHREADED);
 	assert(SUCCEEDED(hr));
 
 	hr = RoGetActivationFactory(HStringReference(L"Windows.Gaming.Input.Gamepad").Get(), __uuidof(IGamepadStatics), &gamepadStatics);
@@ -402,22 +386,6 @@ typedef struct _XINPUT_KEYSTROKE
 
 #define DLLEXPORT extern "C" __declspec(dllexport)
 
-DLLEXPORT BOOL APIENTRY DllMain(HMODULE hModule,
-	DWORD  ul_reason_for_call,
-	LPVOID lpReserved
-)
-{
-	/*switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-	case DLL_PROCESS_DETACH:
-		break;
-	}*/
-	return TRUE;
-}
-
 DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState)
 {
 	InitializeGamepad();
@@ -429,7 +397,7 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 
@@ -500,7 +468,7 @@ DLLEXPORT DWORD WINAPI XInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRAT
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 
@@ -538,7 +506,7 @@ DLLEXPORT DWORD WINAPI XInputGetCapabilities(_In_ DWORD dwUserIndex, _In_ DWORD 
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 
@@ -579,7 +547,7 @@ DLLEXPORT DWORD WINAPI XInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* 
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 		return ERROR_SUCCESS;
@@ -601,7 +569,7 @@ DLLEXPORT DWORD WINAPI XInputGetBatteryInformation(_In_ DWORD dwUserIndex, _In_ 
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 		return ERROR_SUCCESS;
@@ -647,7 +615,7 @@ DLLEXPORT DWORD WINAPI XInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, P
 	}
 
 	GamepadReading state;
-	hr = gamepads[dwUserIndex]->GetCurrentReading(&state);
+	HRESULT hr = gamepads[dwUserIndex]->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 		return ERROR_SUCCESS;
@@ -674,7 +642,7 @@ DLLEXPORT DWORD WINAPI XInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DWO
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 		return ERROR_SUCCESS;
@@ -696,7 +664,7 @@ DLLEXPORT DWORD XInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 		return ERROR_SUCCESS;
@@ -718,7 +686,7 @@ DLLEXPORT DWORD XInputPowerOffController(_In_ DWORD dwUserIndex)
 	auto gamepad = gamepads[dwUserIndex];
 
 	GamepadReading state;
-	hr = gamepad->GetCurrentReading(&state);
+	HRESULT hr = gamepad->GetCurrentReading(&state);
 
 	if (SUCCEEDED(hr)) {
 		return ERROR_SUCCESS;
