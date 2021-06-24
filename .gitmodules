@@ -1,3 +1,6 @@
 [submodule "X1nput/hidapi"]
 	path = X1nput/hidapi
 	url = https://github.com/libusb/hidapi
+[submodule "X1nput/minhook"]
+	path = X1nput/minhook
+	url = https://github.com/TsudaKageyu/minhook
