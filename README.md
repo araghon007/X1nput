@@ -7,6 +7,7 @@ There's no way for the game to know whether the controller supports impulse trig
 ### Usage
 
 1. Find out whether the game you're trying to use this on is 32-bit or 64-bit (You can do this by using task manager)
+
 ![32bit](https://user-images.githubusercontent.com/10870921/123274117-83ee9000-d503-11eb-911e-212974019daa.png)  ![64bit](https://user-images.githubusercontent.com/10870921/123274157-8e108e80-d503-11eb-986a-f855678b8659.png)
 
 2. If it's 32-bit, use X1nputConfigurator32.exe otherwise use X1nputConfigurator.exe
