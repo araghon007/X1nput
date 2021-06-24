@@ -20,6 +20,12 @@ There's no way for the game to know whether the controller supports impulse trig
 
 7. Select the application and press Inject. The application should move over to the Injected panel (this will happen regardless of whether or not the hook was successful, as I am a bad programmer). The default settings use so-called pressure-dependent trigger vibration, which basically means that a specific trigger only vibrates if it's pressed in slightly. If the injection doesn't seem to work, you can also try using a different injector.
 
+### Screenshots
+
+![X1nputConfigurator_TP4sLlIWty](https://user-images.githubusercontent.com/10870921/123273492-fc088600-d502-11eb-92a1-c9a7a8dafdb5.png)
+![X1nputConfigurator_A7KTfhFPWP](https://user-images.githubusercontent.com/10870921/123273501-fdd24980-d502-11eb-92c1-64b1bb59fe6b.png)
+
+
 ### Configuration
 
 There are 2 ways to configure X1nput. Through X1nput Configurator, or manually using notepad. To configure X1nput through X1nput Configurator, do the following:
