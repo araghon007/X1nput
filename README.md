@@ -16,21 +16,30 @@ There's no way for the game to know whether the controller supports impulse trig
 
 4. Select your controller under the Devices list. I'd suggest finding your controller's device instance path and comparing it with what you see in X1nput Configurator. You can do so by opening device manager, finding your controller under Human Interface Devices -> right clicking -> properties -> details and in the drop down menu, select Device instance path.
 
-Wired
+Wired example
 
 ![image](https://user-images.githubusercontent.com/10870921/123274500-daf46500-d503-11eb-94ff-4c5c013361b7.png)
 ![image](https://user-images.githubusercontent.com/10870921/123274567-ecd60800-d503-11eb-8f70-6b2ef86baf3b.png)
+
 ![image](https://user-images.githubusercontent.com/10870921/123274609-f65f7000-d503-11eb-83f2-0ff59fccb639.png)
 ![image](https://user-images.githubusercontent.com/10870921/123275531-ae8d1880-d504-11eb-9f32-707579d2386a.png)
 ![image](https://user-images.githubusercontent.com/10870921/123275427-9ae1b200-d504-11eb-891d-bfae55e6e78a.png)
+
 ![image](https://user-images.githubusercontent.com/10870921/123275284-7a195c80-d504-11eb-98ea-4f811822b028.png)
 ![wired](https://user-images.githubusercontent.com/10870921/123274370-c0ba8700-d503-11eb-9157-6517b8780107.png)
 
-Wireless
+Wireless example
 
 ![image](https://user-images.githubusercontent.com/10870921/123274799-1f800080-d504-11eb-909d-da1d7ba46261.png)
 ![image](https://user-images.githubusercontent.com/10870921/123275651-cbc1e700-d504-11eb-894e-772a11a24a48.png)
 ![image](https://user-images.githubusercontent.com/10870921/123274733-11ca7b00-d504-11eb-9917-d6c73de317c1.png)
+
+Bluetooth example
+(The one you're looking for should be HID-compliant game controller, not Bluetooth XINPUT controller)
+
+![image](https://user-images.githubusercontent.com/10870921/123515731-ef1d9b00-d698-11eb-9c39-12efbbeb363d.png)
+![image](https://user-images.githubusercontent.com/10870921/123515736-f9d83000-d698-11eb-866b-fef06407511f.png)
+
 
 5. Once you have your controller selected, press the Test button. Your controller should vibrate. If not, there's something wrong. Afterwards press Use to save your controller information in the configuration file.
 
