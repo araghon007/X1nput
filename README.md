@@ -52,6 +52,7 @@ Another thing that might be possible using this approach is support for multiple
 Oh, one very important thing, since this is hooking application code, you should steer clear of any games with anti-cheat.
 
 ### Todo
+- Make building the project copy the DLLs properly (for now, you should build AnyCPU first and then x86 and if the DLLs don't seem to change, just copy them from X1nput/x86/Debug or X1nput/Debug)
 - Clean up the code... again
 - Do a lot more testing, try to add multi controller support
 - Figure out how to inject modules to 32-bit apps from a 64-bit app, alleviating the need for a separate 32 bit injector.

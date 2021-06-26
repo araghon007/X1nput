@@ -413,8 +413,8 @@ namespace X1nputConfigurator
             Byte[] Report = new Byte[16];
             UInt32 tmp = 0;
 
-            Report[0] = 0x00; // Ignored in HID
-            Report[1] = 0x00; // Ignored in HID
+            Report[0] = 0x03; // HID report ID (3 for bluetooth, any for USB)
+            Report[1] = 0x0F; // Motor flag mask(?)
             Report[2] = 0x10; // Left trigger
             Report[3] = 0x10; // Right trigger
             Report[4] = 0x05; // Left rumble

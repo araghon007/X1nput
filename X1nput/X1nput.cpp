@@ -194,8 +194,8 @@ DWORD WINAPI detourXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibratio
 
 		
 
-		buf[0] = 0x00; // Ignored in HID
-		buf[1] = 0x00; // Ignored in HID
+		buf[0] = 0x03; // HID report ID (3 for bluetooth, any for USB)
+		buf[1] = 0x0F; // Motor flag mask(?)
 		buf[2] = ApplyTriggerMotorStrength(LTriggerLink, LSpeed, RSpeed, finalLTriggerStrength) * 255; // Left trigger
 		buf[3] = ApplyTriggerMotorStrength(RTriggerLink, LSpeed, RSpeed, finalRTriggerStrength) * 255; // Right trigger
 		buf[4] = (MotorSwap ? RSpeed : LSpeed) * 255 * LMotorStrength; // Left rumble
