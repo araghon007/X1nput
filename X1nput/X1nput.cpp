@@ -9,26 +9,8 @@
 #include <algorithm>
 
 #include "hidapi.h"
-
-#define XINPUT_GAMEPAD_DPAD_UP          0x0001
-#define XINPUT_GAMEPAD_DPAD_DOWN        0x0002
-#define XINPUT_GAMEPAD_DPAD_LEFT        0x0004
-#define XINPUT_GAMEPAD_DPAD_RIGHT       0x0008
-#define XINPUT_GAMEPAD_START            0x0010
-#define XINPUT_GAMEPAD_BACK             0x0020
-#define XINPUT_GAMEPAD_LEFT_THUMB       0x0040
-#define XINPUT_GAMEPAD_RIGHT_THUMB      0x0080
-#define XINPUT_GAMEPAD_LEFT_SHOULDER    0x0100
-#define XINPUT_GAMEPAD_RIGHT_SHOULDER   0x0200
-#define XINPUT_GAMEPAD_A                0x1000
-#define XINPUT_GAMEPAD_B                0x2000
-#define XINPUT_GAMEPAD_X                0x4000
-#define XINPUT_GAMEPAD_Y				0x8000
-
-#define BATTERY_TYPE_DISCONNECTED		0x00
-
-#define XUSER_MAX_COUNT                 4
-#define XUSER_INDEX_ANY					0x000000FF
+#include <hidsdi.h>
+#include <map>
 
 #define CONFIG_PATH						_T(".\\X1nput.ini")
 
@@ -72,6 +54,8 @@ float ApplyTriggerMotorStrength(TriggerMotorLink link, float leftSpeed, float ri
 int VendorID = 1118; // Microsoft
 int ProductID = 746; // Default Xbox One Wireless Controller Product ID
 
+bool Auto = true;
+
 bool MultiController = false; // Multi-controller support
 char One[256]; // First controller
 char Two[256]; // Second controller
@@ -112,6 +96,8 @@ void GetConfig() {
 	
 	LTriggerStrength = GetConfigFloat(_T("Triggers"), _T("LeftStrength"), _T("1.0"));
 	RTriggerStrength = GetConfigFloat(_T("Triggers"), _T("RightStrength"), _T("1.0"));
+
+	Auto = GetConfigBool(_T("Controllers"), _T("Auto"), _T("True"));
 
 	MultiController = GetConfigBool(_T("Controllers"), _T("Enabled"), _T("False"));
 	strcpy(One, GetConfigString(_T("Controllers"), _T("One"), NULL));
@@ -162,6 +148,9 @@ typedef DWORD(WINAPI* XINPUTGETSTATE)(DWORD, XINPUT_STATE*);
 static XINPUTSETSTATE hookedXInputSetState = nullptr;
 static XINPUTGETSTATE hookedXInputGetState = nullptr;
 
+
+static decltype(DeviceIoControl)* real_DeviceIoControl = DeviceIoControl;
+
 // wrapper for easier setting up hooks for MinHook
 template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
@@ -175,6 +164,13 @@ inline MH_STATUS MH_CreateHookApiEx(LPCWSTR pszModule, LPCSTR pszProcName, LPVOI
 	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 }
 
+struct input {
+	BYTE leftTrigger;
+	BYTE rightTrigger;
+};
+
+#define MAX_STR 255
+wchar_t wstr[MAX_STR];
 int res;
 unsigned char buf[9];
 hid_device* handle;
@@ -182,17 +178,94 @@ hid_device* handle1;
 hid_device* handle2;
 hid_device* handle3;
 hid_device* handle4;
-int i;
+std::map<HANDLE, input> inputMap;
 
-int testT = 0;
+//
+// Why didn't I try this earlier
+// Hooks DeviceIoControl() API
+// Thanks to nefarius https://github.com/nefarius/XInputHooker
+// 
+BOOL WINAPI DetourDeviceIoControl(
+	HANDLE hDevice,
+	DWORD dwIoControlCode,
+	LPVOID lpInBuffer,
+	DWORD nInBufferSize,
+	LPVOID lpOutBuffer,
+	DWORD nOutBufferSize,
+	LPDWORD lpBytesReturned,
+	LPOVERLAPPED lpOverlapped
+)
+{
+	auto retval = 1;
+
+	if (dwIoControlCode == 0x8000a010)
+	{
+		HidD_GetProductString(hDevice, wstr, MAX_STR);
+
+		if (wcsstr(wstr, L"360")) { // Don't want to leave the poor old 360 controllers without vibration
+			retval = real_DeviceIoControl(
+				hDevice,
+				dwIoControlCode,
+				lpInBuffer,
+				nInBufferSize,
+				lpOutBuffer,
+				nOutBufferSize,
+				lpBytesReturned,
+				lpOverlapped
+			);
+		}
+		else {
+			BYTE* charInBuf = static_cast<BYTE*>(lpInBuffer);
+			float LSpeed = charInBuf[2] / 255.0f;
+			float RSpeed = charInBuf[3] / 255.0f;
+
+			float LInputModifier = LInputModifierBase > 1.0f ? (pow(LInputModifierBase, inputMap[hDevice].leftTrigger / 255.0f) - 1.0f) / (LInputModifierBase - 1.0f) : 1.0f;
+			float RInputModifier = RInputModifierBase > 1.0f ? (pow(RInputModifierBase, inputMap[hDevice].rightTrigger / 255.0f) - 1.0f) / (RInputModifierBase - 1.0f) : 1.0f;
+
+			float finalLTriggerStrength = LInputModifier * LTriggerStrength;
+			float finalRTriggerStrength = RInputModifier * RTriggerStrength;
+
+			buf[0] = 0x03; // HID report ID (3 for bluetooth, any for USB)
+			buf[1] = 0x0F; // Motor flag mask(?)
+			buf[2] = ApplyTriggerMotorStrength(LTriggerLink, LSpeed, RSpeed, finalLTriggerStrength) * 255; // Left trigger
+			buf[3] = ApplyTriggerMotorStrength(RTriggerLink, LSpeed, RSpeed, finalRTriggerStrength) * 255; // Right trigger
+			buf[4] = (MotorSwap ? RSpeed : LSpeed) * 255 * LMotorStrength; // Left rumble
+			buf[5] = (MotorSwap ? LSpeed : RSpeed) * 255 * RMotorStrength; // Right rumble
+			// "Pulse"
+			buf[6] = 0xFF; // On time
+			buf[7] = 0x00; // Off time 
+			buf[8] = 0xFF; // Number of repeats
+			WriteFile(hDevice, buf, 9, lpBytesReturned, lpOverlapped);
+		}
+	}
+	else {
+		retval = real_DeviceIoControl(
+			hDevice,
+			dwIoControlCode,
+			lpInBuffer,
+			nInBufferSize,
+			lpOutBuffer,
+			nOutBufferSize,
+			lpBytesReturned,
+			lpOverlapped
+		);
+		if (dwIoControlCode == 0x8000e00c && lpOutBuffer && nOutBufferSize > 0)
+		{
+			BYTE* charIOutBuf = static_cast<BYTE*>(lpOutBuffer);
+
+			inputMap[hDevice].leftTrigger = charIOutBuf[13];
+			inputMap[hDevice].rightTrigger = charIOutBuf[14];
+		}
+	}
+
+
+	return retval;
+}
 
 //Own GetState
 DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
-	// first call the original function
-	DWORD toReturn = hookedXInputGetState(dwUserIndex, pState);
-
-	return toReturn;
+	return hookedXInputGetState(dwUserIndex, pState);
 }
 
 //Own SetState
@@ -309,43 +382,50 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		case DLL_PROCESS_ATTACH:
 		{
 			MH_Initialize();
-			//1_4
-			if (MH_CreateHookApiEx(L"XINPUT1_4", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
-				MH_CreateHookApiEx(L"XINPUT1_4", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
-			//1_3
-			if (hookedXInputSetState == nullptr)
-				if(MH_CreateHookApiEx(L"XINPUT1_3", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
-					MH_CreateHookApiEx(L"XINPUT1_3", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
 
-			//1_2
-			if (hookedXInputSetState == nullptr)
-				if(MH_CreateHookApiEx(L"XINPUT_1_2", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
-					MH_CreateHookApiEx(L"XINPUT_1_2", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
-			//1_1
-			if (hookedXInputSetState == nullptr)
-				if(MH_CreateHookApiEx(L"XINPUT_1_1", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
-					MH_CreateHookApiEx(L"XINPUT_1_1", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
-			//1.0
-			if (hookedXInputSetState == nullptr)
-				if(MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputSetStateEx", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
-					MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetStateEx", &detourXInputGetState, &hookedXInputGetState);
+			GetConfig();
+
+			if (Auto) {
+				MH_CreateHookEx(DeviceIoControl, DetourDeviceIoControl, &real_DeviceIoControl);
+			}
+			else {
+				//1_4
+				if (MH_CreateHookApiEx(L"XINPUT1_4", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
+					MH_CreateHookApiEx(L"XINPUT1_4", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
+				//1_3
+				if (hookedXInputSetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT1_3", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
+						MH_CreateHookApiEx(L"XINPUT1_3", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
+				//1_2
+				if (hookedXInputSetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT_1_2", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
+						MH_CreateHookApiEx(L"XINPUT_1_2", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
+				//1_1
+				if (hookedXInputSetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT_1_1", "XInputSetState", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
+						MH_CreateHookApiEx(L"XINPUT_1_1", "XInputGetState", &detourXInputGetState, &hookedXInputGetState);
+				//1.0
+				if (hookedXInputSetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputSetStateEx", &detourXInputSetState, &hookedXInputSetState) == MH_OK)
+						MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetStateEx", &detourXInputGetState, &hookedXInputGetState);
+			}
 
 			if (MH_EnableHook(MH_ALL_HOOKS) == MH_OK) {
-				GetConfig();
-
-				res = hid_init();
-				if (MultiController) {
-					if (One[0] != '\0')
-						handle1 = hid_open_path(One);
-					if (Two[0] != '\0')
-						handle2 = hid_open_path(Two);
-					if (Three[0] != '\0')
-						handle3 = hid_open_path(Three);
-					if (Four[0] != '\0')
-						handle4 = hid_open_path(Four);
-				}
-				else {
-					handle = hid_open(VendorID, ProductID, NULL);
+				if (!Auto) {
+					res = hid_init();
+					if (MultiController) {
+						if (One[0] != '\0')
+							handle1 = hid_open_path(One);
+						if (Two[0] != '\0')
+							handle2 = hid_open_path(Two);
+						if (Three[0] != '\0')
+							handle3 = hid_open_path(Three);
+						if (Four[0] != '\0')
+							handle4 = hid_open_path(Four);
+					}
+					else {
+						handle = hid_open(VendorID, ProductID, NULL);
+					}
 				}
 			}
 
@@ -354,23 +434,25 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 		case DLL_PROCESS_DETACH:
 		{
-			if (MultiController) {
-				if (handle1 != NULL)
-					hid_close(handle1);
-				if (handle2 != NULL)
-					hid_close(handle2);
-				if (handle3 != NULL)
-					hid_close(handle3);
-				if (handle4 != NULL)
-					hid_close(handle4);
-			}
-			else {
-				if (handle != NULL) {
-					hid_close(handle);
+			if (!Auto) {
+				if (MultiController) {
+					if (handle1 != NULL)
+						hid_close(handle1);
+					if (handle2 != NULL)
+						hid_close(handle2);
+					if (handle3 != NULL)
+						hid_close(handle3);
+					if (handle4 != NULL)
+						hid_close(handle4);
 				}
-			}
+				else {
+					if (handle != NULL) {
+						hid_close(handle);
+					}
+				}
 
-			res = hid_exit();
+				res = hid_exit();
+			}
 			MH_DisableHook(MH_ALL_HOOKS);
 			MH_Uninitialize();
 			break;

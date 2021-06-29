@@ -99,7 +99,7 @@
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
-      <AdditionalDependencies>setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>hid.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(SolutionDir)$(ConfigurationName)\X1nput.dll" "$(SolutionDir)X1nputConfigurator\bin\$(ConfigurationName)\X1nput.dll"
@@ -120,7 +120,7 @@ copy /y "$(SolutionDir)x64\$(ConfigurationName)\X1nput.dll" "$(SolutionDir)X1npu
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
-      <AdditionalDependencies>setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>hid.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(SolutionDir)$(ConfigurationName)\X1nput.dll" "$(SolutionDir)X1nputConfigurator\bin\$(ConfigurationName)\X1nput.dll"
@@ -147,7 +147,7 @@ copy /y "$(SolutionDir)x64\$(ConfigurationName)\X1nput.dll" "$(SolutionDir)X1npu
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>hid.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /y "$(SolutionDir)$(ConfigurationName)\X1nput.dll" "$(SolutionDir)X1nputConfigurator\bin\$(ConfigurationName)\X1nput.dll"
@@ -174,10 +174,11 @@ copy /y "$(SolutionDir)x64\$(ConfigurationName)\X1nput.dll" "$(SolutionDir)X1npu
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>hid.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command></Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
