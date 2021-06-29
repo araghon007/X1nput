@@ -1,7 +1,10 @@
 ﻿// Thanks to wqaxs36 https://www.codeproject.com/Articles/1244702/How-to-Communicate-with-its-USB-Devices-using-HID
 
 using System;
+using System.Diagnostics.Eventing.Reader;
 using System.Runtime.InteropServices;
+using System.Text;
+
 namespace X1nputConfigurator
 {
     public static class HID
@@ -57,6 +60,9 @@ namespace X1nputConfigurator
 
         [DllImport("hid.dll", SetLastError = true)]
         static extern int HidP_SetUsageValue(HIDP_REPORT_TYPE ReportType, ushort UsagePage, short LinkCollection, ushort Usage, ulong UsageValue, IntPtr PreparsedData, IntPtr Report, int ReportLength);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        static extern bool HidD_GetProductString(IntPtr HidDeviceObject, byte[] Buffer, Int32 BufferLength);
 
         [DllImport("setupapi.dll", SetLastError = true)]
         static extern bool SetupDiDestroyDeviceInfoList(IntPtr DeviceInfoSet);
@@ -425,6 +431,15 @@ namespace X1nputConfigurator
             Report[8] = 0x00; // Number of repeats
 
             WriteFile(HidDevice.HidDevice, Report, 16, ref tmp, IntPtr.Zero);
+        }
+
+        public static string GetProductString(HID_DEVICE HidDevice)
+        {
+            var chars = new byte[255];
+            if (HidD_GetProductString(HidDevice.HidDevice, chars, 255))
+                return Encoding.UTF8.GetString(chars);
+            else
+                return null;
         }
 
         static void OpenHidDevice(string DevicePath, ref HID_DEVICE[] HidDevice, int iHIDD)

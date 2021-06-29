@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Ini;
@@ -23,7 +22,16 @@ namespace X1nputConfigurator
 
         private List<Process> injectedProcesses = new List<Process>();
 
-        private IniFile config = new IniFile(@".\X1nput.ini");
+        private static IniFile config = new IniFile(@".\X1nput.ini");
+
+        private static Dictionary<uint, string> controllerIDs = new Dictionary<uint, string>()
+        {
+            {0x2FF, "Xbox Controller (Wired)"},
+            {0x2EA, "Xbox One S Controller (Wireless)"},
+            {0x2E0, "Xbox One S Controller (Bluetooth)"},
+            {0xB12, "Xbox Series X/S Controller (Wireless)"},
+            {0xB13, "Xbox Series X/S Controller (Bluetooth)"},
+        };
 
         /* Maybe later
 
@@ -183,11 +191,24 @@ namespace X1nputConfigurator
                     var split2 = split.Last();
                     var split3 = split2.Split('#');
 
+                    var split4 = split3[1].Split('&');
+                    var split5 = split4[2].Split('_');
+
                     var devicePath = string.Join(@"\", split3, 0, 3).ToUpper();
+
+                    var name = HID.GetProductString(device);
+
+                    if (controllerIDs.ContainsKey(device.Attributes.ProductID))
+                        name = controllerIDs[device.Attributes.ProductID];
+
+                    uint id;
+                    if(uint.TryParse(split5[1], NumberStyles.HexNumber, null, out id) && id > 0)
+                        name += $" ({id/2})";
 
                     var dev = new ListBoxItem()
                     {
-                        Content = devicePath,
+                        ToolTip = new ToolTip{Content = devicePath},
+                        Content = name,
                     };
 
                     foundDevices.Add(device);
@@ -200,7 +221,8 @@ namespace X1nputConfigurator
         private void CopyConfig(Process process)
         {
             var path = Path.GetDirectoryName(process.MainModule.FileName);
-            File.Copy("X1nput.ini", $@"{path}\X1nput.ini", OverrideConfig.IsChecked ?? false);
+            if(OverrideConfig.IsChecked == true)
+                File.Copy("X1nput.ini", $@"{path}\X1nput.ini", true);
         }
 
         private void TestDevClick(object sender, RoutedEventArgs e)

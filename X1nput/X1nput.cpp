@@ -72,6 +72,12 @@ float ApplyTriggerMotorStrength(TriggerMotorLink link, float leftSpeed, float ri
 int VendorID = 1118; // Microsoft
 int ProductID = 746; // Default Xbox One Wireless Controller Product ID
 
+bool MultiController = false; // Multi-controller support
+char One[256]; // First controller
+char Two[256]; // Second controller
+char Three[256]; // Third controller
+char Four[256]; // Fourth controller
+
 // Config related methods, thanks to xiaohe521, https://www.codeproject.com/Articles/10809/A-Small-Class-to-Read-INI-File
 #pragma region Config loading
 float GetConfigFloat(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
@@ -92,12 +98,26 @@ bool GetConfigBool(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
 	return _tcsicmp(result, _T("true")) == 0 ? true : false;
 }
 
+char* GetConfigString(LPCTSTR AppName, LPCTSTR KeyName, LPCTSTR Default) {
+	TCHAR result[256];
+	char res[256];
+	GetPrivateProfileString(AppName, KeyName, Default, result, 256, CONFIG_PATH);
+	wcstombs(res, result, wcslen(result) + 1);
+	return res;
+}
+
 void GetConfig() {
 	VendorID = GetConfigInt(_T("Controller"), _T("VendorID"), 1118);
 	ProductID = GetConfigInt(_T("Controller"), _T("ProductID"), 746);
 	
 	LTriggerStrength = GetConfigFloat(_T("Triggers"), _T("LeftStrength"), _T("1.0"));
 	RTriggerStrength = GetConfigFloat(_T("Triggers"), _T("RightStrength"), _T("1.0"));
+
+	MultiController = GetConfigBool(_T("Controllers"), _T("Enabled"), _T("False"));
+	strcpy(One, GetConfigString(_T("Controllers"), _T("One"), NULL));
+	strcpy(Two, GetConfigString(_T("Controllers"), _T("Two"), NULL));
+	strcpy(Three, GetConfigString(_T("Controllers"), _T("Three"), NULL));
+	strcpy(Four, GetConfigString(_T("Controllers"), _T("Four"), NULL));
 
 	LTriggerLink = static_cast<TriggerMotorLink>(GetConfigInt(_T("Triggers"), _T("LeftTriggerLink"), 0));
 	RTriggerLink = static_cast<TriggerMotorLink>(GetConfigInt(_T("Triggers"), _T("RightTriggerLink"), 0));
@@ -158,9 +178,11 @@ inline MH_STATUS MH_CreateHookApiEx(LPCWSTR pszModule, LPCSTR pszProcName, LPVOI
 int res;
 unsigned char buf[9];
 hid_device* handle;
+hid_device* handle1;
+hid_device* handle2;
+hid_device* handle3;
+hid_device* handle4;
 int i;
-
-XINPUT_STATE currState[4];
 
 int testT = 0;
 
@@ -170,51 +192,112 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 	// first call the original function
 	DWORD toReturn = hookedXInputGetState(dwUserIndex, pState);
 
-	std::copy(pState, pState + 4, currState);
-
 	return toReturn;
 }
 
 //Own SetState
 DWORD WINAPI detourXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
 {
-	if(handle == NULL)
-		handle = hid_open(VendorID, ProductID, NULL);
+	XINPUT_STATE pState;
 
-	if (handle != NULL) {
+	DWORD toReturn = hookedXInputGetState(dwUserIndex, &pState);
 
-		float LSpeed = pVibration->wLeftMotorSpeed / 65535.0f;
-		float RSpeed = pVibration->wRightMotorSpeed / 65535.0f;
+	if (toReturn == ERROR_SUCCESS) {
+		if (MultiController) {
+			if (handle1 == NULL && One[0] != '\0')
+				handle1 = hid_open_path(One);
+			if (handle2 == NULL && Two[0] != '\0')
+				handle2 = hid_open_path(Two);
+			if (handle3 == NULL && Three[0] != '\0')
+				handle3 = hid_open_path(Three);
+			if (handle4 == NULL && Four[0] != '\0')
+				handle4 = hid_open_path(Four);
+		}
+		else {
+			if (handle == NULL) {
+				handle = hid_open(VendorID, ProductID, NULL);
+			}
+		}
 
-		float LInputModifier = LInputModifierBase > 1.0f ? (pow(LInputModifierBase, currState[dwUserIndex].Gamepad.bLeftTrigger / 255.0f) - 1.0f) / (LInputModifierBase - 1.0f) : 1.0f;
-		float RInputModifier = RInputModifierBase > 1.0f ? (pow(RInputModifierBase, currState[dwUserIndex].Gamepad.bRightTrigger / 255.0f) - 1.0f) / (RInputModifierBase - 1.0f) : 1.0f;
+		hid_device* currHandle = NULL;
 
-		float finalLTriggerStrength = LInputModifier * LTriggerStrength;
-		float finalRTriggerStrength = RInputModifier * RTriggerStrength;
+		if (MultiController) {
+			switch (dwUserIndex) {
+				case 0:
+					currHandle = handle1;
+					break;
+				case 1:
+					currHandle = handle2;
+					break;
+				case 2:
+					currHandle = handle3;
+					break;
+				case 3:
+					currHandle = handle4;
+					break;
+			}
+		}
+		else {
+			currHandle = handle;
+		}
 
-		
+		if (currHandle != NULL) {
 
-		buf[0] = 0x03; // HID report ID (3 for bluetooth, any for USB)
-		buf[1] = 0x0F; // Motor flag mask(?)
-		buf[2] = ApplyTriggerMotorStrength(LTriggerLink, LSpeed, RSpeed, finalLTriggerStrength) * 255; // Left trigger
-		buf[3] = ApplyTriggerMotorStrength(RTriggerLink, LSpeed, RSpeed, finalRTriggerStrength) * 255; // Right trigger
-		buf[4] = (MotorSwap ? RSpeed : LSpeed) * 255 * LMotorStrength; // Left rumble
-		buf[5] = (MotorSwap ? LSpeed : RSpeed) * 255 * RMotorStrength; // Right rumble
-		// "Pulse"
-		buf[6] = 0xFF; // On time
-		buf[7] = 0x00; // Off time 
-		buf[8] = 0xFF; // Number of repeats
+			float LSpeed = pVibration->wLeftMotorSpeed / 65535.0f;
+			float RSpeed = pVibration->wRightMotorSpeed / 65535.0f;
 
-		res = hid_write(handle, buf, 9);
+			float LInputModifier = LInputModifierBase > 1.0f ? (pow(LInputModifierBase, pState.Gamepad.bLeftTrigger / 255.0f) - 1.0f) / (LInputModifierBase - 1.0f) : 1.0f;
+			float RInputModifier = RInputModifierBase > 1.0f ? (pow(RInputModifierBase, pState.Gamepad.bRightTrigger / 255.0f) - 1.0f) / (RInputModifierBase - 1.0f) : 1.0f;
 
-		if (res == -1) {
-			hid_close(handle);
-			handle = hid_open(VendorID, ProductID, NULL);
-			res = hid_write(handle, buf, 9);
+			float finalLTriggerStrength = LInputModifier * LTriggerStrength;
+			float finalRTriggerStrength = RInputModifier * RTriggerStrength;
+
+			buf[0] = 0x03; // HID report ID (3 for bluetooth, any for USB)
+			buf[1] = 0x0F; // Motor flag mask(?)
+			buf[2] = ApplyTriggerMotorStrength(LTriggerLink, LSpeed, RSpeed, finalLTriggerStrength) * 255; // Left trigger
+			buf[3] = ApplyTriggerMotorStrength(RTriggerLink, LSpeed, RSpeed, finalRTriggerStrength) * 255; // Right trigger
+			buf[4] = (MotorSwap ? RSpeed : LSpeed) * 255 * LMotorStrength; // Left rumble
+			buf[5] = (MotorSwap ? LSpeed : RSpeed) * 255 * RMotorStrength; // Right rumble
+			// "Pulse"
+			buf[6] = 0xFF; // On time
+			buf[7] = 0x00; // Off time 
+			buf[8] = 0xFF; // Number of repeats
+
+			res = hid_write(currHandle, buf, 9);
+
+			if (res == -1) {
+				hid_close(currHandle);
+
+				if (MultiController) {
+					switch (dwUserIndex) {
+					case 0:
+						currHandle = handle1 = hid_open_path(One);
+						break;
+					case 1:
+						currHandle = handle2 = hid_open_path(Two);
+						break;
+					case 2:
+						currHandle = handle3 = hid_open_path(Three);
+						break;
+					case 3:
+						currHandle = handle4 = hid_open_path(Four);
+						break;
+					}
+				}
+				else {
+					currHandle = handle = hid_open(VendorID, ProductID, NULL);
+				}
+
+				if (currHandle != NULL)
+					res = hid_write(currHandle, buf, 9);
+			}
+		}
+		else {
+			toReturn = hookedXInputSetState(dwUserIndex, pVibration); // For example, if the controller is an Xbox 360 controller
 		}
 	}
 
-	return ERROR_SUCCESS;
+	return toReturn;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule,
@@ -251,8 +334,19 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 				GetConfig();
 
 				res = hid_init();
-
-				handle = hid_open(VendorID, ProductID, NULL);
+				if (MultiController) {
+					if (One[0] != '\0')
+						handle1 = hid_open_path(One);
+					if (Two[0] != '\0')
+						handle2 = hid_open_path(Two);
+					if (Three[0] != '\0')
+						handle3 = hid_open_path(Three);
+					if (Four[0] != '\0')
+						handle4 = hid_open_path(Four);
+				}
+				else {
+					handle = hid_open(VendorID, ProductID, NULL);
+				}
 			}
 
 			break;
@@ -260,8 +354,22 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 		case DLL_PROCESS_DETACH:
 		{
-			if(handle != NULL)
-				hid_close(handle);
+			if (MultiController) {
+				if (handle1 != NULL)
+					hid_close(handle1);
+				if (handle2 != NULL)
+					hid_close(handle2);
+				if (handle3 != NULL)
+					hid_close(handle3);
+				if (handle4 != NULL)
+					hid_close(handle4);
+			}
+			else {
+				if (handle != NULL) {
+					hid_close(handle);
+				}
+			}
+
 			res = hid_exit();
 			MH_DisableHook(MH_ALL_HOOKS);
 			MH_Uninitialize();
