@@ -3,7 +3,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Ini
+namespace X1nputConfigurator.Misc
 {
     /// <summary>
     /// Create a New INI file to store or load data

@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace X1nputConfigurator
+namespace X1nputConfigurator.Misc
 {
     public static class Injector
     {

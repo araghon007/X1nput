@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace X1inputConfigurator
+namespace X1nputConfigurator
 {
     /// <summary>
     /// Interaction logic for App.xaml

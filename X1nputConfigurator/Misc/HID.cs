@@ -5,7 +5,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace X1nputConfigurator
+namespace X1nputConfigurator.Misc
 {
     public static class HID
     {
@@ -442,6 +442,11 @@ namespace X1nputConfigurator
                 return null;
         }
 
+        public static void CloseHidDevice(HID_DEVICE HidDevice)
+        {
+            CloseHandle(HidDevice.HidDevice);
+        }
+
         static void OpenHidDevice(string DevicePath, ref HID_DEVICE[] HidDevice, int iHIDD)
         {
             /*++
@@ -475,7 +480,8 @@ namespace X1nputConfigurator
             HidDevice[iHIDD].Ppd = IntPtr.Zero;
             HidD_GetPreparsedData(HidDevice[iHIDD].HidDevice, ref HidDevice[iHIDD].Ppd);
             HidD_GetAttributes(HidDevice[iHIDD].HidDevice, ref HidDevice[iHIDD].Attributes);
-            HidP_GetCaps(HidDevice[iHIDD].Ppd, ref HidDevice[iHIDD].Caps);
+            if(HidDevice[iHIDD].HidDevice != IntPtr.Zero){}
+                HidP_GetCaps(HidDevice[iHIDD].Ppd, ref HidDevice[iHIDD].Caps);
 
             //MessageBox.Show(GetLastError().ToString());
 

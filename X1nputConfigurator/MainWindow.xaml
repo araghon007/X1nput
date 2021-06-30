@@ -3,47 +3,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:X1inputConfigurator"
+        xmlns:local="clr-namespace:X1nputConfigurator"
         mc:Ignorable="d"
         Title="X1nput Configurator" Height="450" Width="800">
     <!-- UI designers needed -->
     <!-- I was told to use Grid instead of StackPanel, so I'm now using all the Grid -->
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Menu Grid.ColumnSpan="2">
             <MenuItem Header="Configure" Click="OpenConfig"/>
+            <MenuItem Header="Controller Setup" Click="OpenSetup"/>
         </Menu>
-        <Grid Grid.Column="0" Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40"/>
-                <RowDefinition/>
-                <RowDefinition Height="60"/>
-            </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24">Devices</TextBlock>
-            <ListBox Grid.Row="1" Name="Devices" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20,5"/>
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="1" Content="Test" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Width="60" Click="TestDevClick"/>
-                <Button Grid.Column="3" Content="Use" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Width="50" Click="UseDevClick"/>
-                <Button Grid.Column="5" Content="Refresh" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Width="75" Click="RefreshDevClick"/>
-            </Grid>
-        </Grid>
-        <Grid Grid.Column="1" Grid.Row="1">
+        <Grid Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition/>
                 <RowDefinition/>
@@ -62,14 +36,22 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16">Injectable</TextBlock>
-                    <Button Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Inject" FontSize="14" Width="50" Click="InjectClick"/>
-                    <Button Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Refresh" FontSize="14" Width="60" Click="RefreshClick"/>
+                    <Button Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Inject" FontSize="14" Width="50" Click="InjectClick">
+                        <Button.ToolTip>
+                            <ToolTip>Use this device as default controller</ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+                    <Button Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Refresh" FontSize="14" Width="60" Click="RefreshClick">
+                        <Button.ToolTip>
+                            <ToolTip>Use this device as default controller</ToolTip>
+                        </Button.ToolTip>
+                    </Button>
                     <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Center">
                         <StackPanel.ToolTip>
                             <ToolTip>Override X1nput.ini in game directory, otherwise you have to replace/modify it yourself (applies to reload too)</ToolTip>
                         </StackPanel.ToolTip>
                         <TextBlock VerticalAlignment="Center" FontSize="12" TextWrapping="Wrap" Width="50">Override Config</TextBlock>
-                        <CheckBox x:Name="OverrideConfig" VerticalAlignment="Center" IsChecked="True"/>
+                        <CheckBox x:Name="OverrideConfig" VerticalAlignment="Center" IsChecked="True" Click="OverrideConfig_OnClick"/>
                     </StackPanel>
                 </Grid>
             </Grid>
