@@ -62,6 +62,8 @@ namespace X1nputConfigurator
                     {
                         if (process.MainModule.FileName.StartsWith(winRoot.FullName))
                             continue;
+                        if (process.Handle == IntPtr.Zero)
+                            continue;
                     }
                     catch
                     {
