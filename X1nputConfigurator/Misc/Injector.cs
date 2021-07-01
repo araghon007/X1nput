@@ -13,12 +13,6 @@ namespace X1nputConfigurator.Misc
         [DllImport("kernel32.dll")]
         public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-        public static extern IntPtr GetModuleHandle(string lpModuleName);
-
-        [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
-        static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
-
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
             uint dwSize, uint flAllocationType, uint flProtect);
@@ -29,10 +23,12 @@ namespace X1nputConfigurator.Misc
         [DllImport("kernel32.dll")]
         static extern IntPtr CreateRemoteThread(IntPtr hProcess,
             IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
+        
+        [DllImport("psapi.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern int EnumProcessModulesEx(IntPtr hProcess, [Out] IntPtr lphModule, uint cb, out uint lpcbNeeded, uint dwFilterFlag);
 
-        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
+        [DllImport("psapi.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern int GetModuleFileNameEx(IntPtr hProcess, IntPtr hModule, [Out] StringBuilder lpFilename, uint nSize);
 
         // privileges
         const int PROCESS_CREATE_THREAD = 0x0002;
@@ -46,76 +42,86 @@ namespace X1nputConfigurator.Misc
         const uint MEM_RESERVE = 0x00002000;
         const uint PAGE_READWRITE = 4;
 
-        public static void UnDeInject(Process process)
+        /// <summary>
+        /// Unloads the X1nput DLL from specified process
+        /// </summary>
+        /// <param name="process">Process to unload X1nput from</param>
+        public static bool Unload(ProcessInfo process)
         {
             // Refresh the process to get new modules
-            process = Process.GetProcessById(process.Id);
+            var newProcess = Process.GetProcessById(process.Process.Id);
 
             // geting the handle of the process - with required privileges
-            IntPtr procHandle = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, false, process.Id);
+            IntPtr procHandle = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, false, newProcess.Id);
 
             // searching for the address of FreeLibraryAndExitThread and storing it in a pointer
-            IntPtr freeLibraryAddr = GetProcAddress(GetModuleHandle("kernel32.dll"), "FreeLibraryAndExitThread");
+            IntPtr freeLibraryAddr = IntPtr.Add(process.Kernel32, process.IsWOW64 ? Constants.FreeLibrary32 : Constants.FreeLibrary);
 
-            foreach (ProcessModule module in process.Modules)
+            // Setting up the variable for the second argument for EnumProcessModules
+            IntPtr[] hMods = new IntPtr[1024];
+
+            GCHandle gch = GCHandle.Alloc(hMods, GCHandleType.Pinned); // Don't forget to free this later
+            IntPtr pModules = gch.AddrOfPinnedObject();
+
+            // Setting up the rest of the parameters for EnumProcessModules
+            uint uiSize = (uint)(Marshal.SizeOf(typeof(IntPtr)) * hMods.Length);
+            
+            if (EnumProcessModulesEx(procHandle, pModules, uiSize, out var cbNeeded, 0x03) == 1)
             {
-                if (module.ModuleName.ToLower().Contains("x1nput"))
+                int uiTotalNumberofModules = (int)(cbNeeded / Marshal.SizeOf(typeof(IntPtr)));
+
+                for (int i = 0; i < uiTotalNumberofModules; i++)
                 {
-                    // creating a thread that will call FreeLibraryAndExitThread with the module's base address as argument
-                    // You have no idea how long this took to figure out
-                    CreateRemoteThread(procHandle, IntPtr.Zero, 0, freeLibraryAddr, module.BaseAddress, 0, IntPtr.Zero);
+                    StringBuilder strbld = new StringBuilder(1024);
+
+                    GetModuleFileNameEx(procHandle, hMods[i], strbld, (uint)strbld.Capacity);
+
+                    var lower = strbld.ToString().ToLower();
+
+                    if (strbld.ToString().ToLower().Contains("x1nput"))
+                    {
+                        return CreateRemoteThread(procHandle, IntPtr.Zero, 0, freeLibraryAddr, hMods[i], 0, IntPtr.Zero) != IntPtr.Zero;
+                    }
                 }
             }
+
+            return false;
         }
 
         /// <summary>
         /// Inject the correct X1nput DLL into specified process 
         /// </summary>
         /// <param name="process">Process to inject X1nput to</param>
-        public static void Inject(Process process)
+        public static bool Inject(ProcessInfo process)
         {
             // geting the handle of the process - with required privileges
-            IntPtr procHandle = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, false, process.Id);
+            IntPtr procHandle = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, false, process.Process.Id);
 
             // searching for the address of LoadLibraryA and storing it in a pointer
-            IntPtr loadLibraryAddr = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
-            
+            //IntPtr loadLibraryAddr = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+
+            // Q: "Did you really go this far just to make 1 executable for both 64 and 32-bit processes?" A: no u
+            IntPtr loadLibraryAddr = IntPtr.Add(process.Kernel32, process.IsWOW64 ? Constants.LoadLibrary32 : Constants.LoadLibrary);
+
+
             // name of the dll we want to inject
             string dllName = $@"{Environment.CurrentDirectory}\X1nput.dll";
 
-            bool is64 = false;
-
-            if (Environment.Is64BitOperatingSystem)
+            if (IntPtr.Size == 8 && !process.IsWOW64)
             {
-                bool is32;
-                if (IsWow64Process(process.Handle, out is32))
-                {
-                    if (!is32)
-                    {
-                        dllName = $@"{Environment.CurrentDirectory}\X1nput64.dll";
-                        is64 = true;
-                    }
-                }
+                dllName = $@"{Environment.CurrentDirectory}\X1nput64.dll";
             }
-            /*
-            if (!is64 && IntPtr.Size == 8)
-            {
-                Inject32(process, dllName);
-            }
-            else
-            {*/
-                // alocating some memory on the target process - enough to store the name of the dll
-                // and storing its address in a pointer
-                IntPtr allocMemAddress = VirtualAllocEx(procHandle, IntPtr.Zero, (uint)((dllName.Length + 1) * Marshal.SizeOf(typeof(char))), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+            // alocating some memory on the target process - enough to store the name of the dll
+            // and storing its address in a pointer
+            IntPtr allocMemAddress = VirtualAllocEx(procHandle, IntPtr.Zero, (uint)((dllName.Length + 1) * Marshal.SizeOf(typeof(char))), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-                // writing the name of the dll there
-                UIntPtr bytesWritten;
-                WriteProcessMemory(procHandle, allocMemAddress, Encoding.Default.GetBytes(dllName), (uint)((dllName.Length + 1) * Marshal.SizeOf(typeof(char))), out bytesWritten);
+            // writing the name of the dll there
+            UIntPtr bytesWritten;
+            WriteProcessMemory(procHandle, allocMemAddress, Encoding.Default.GetBytes(dllName), (uint)((dllName.Length + 1) * Marshal.SizeOf(typeof(char))), out bytesWritten);
 
-                // creating a thread that will call LoadLibraryA with allocMemAddress as argument
-                // All that's needed for 32 bit injection is the right library address... How hard can it be?
-                CreateRemoteThread(procHandle, IntPtr.Zero, 0, loadLibraryAddr, allocMemAddress, 0, IntPtr.Zero);
-            //}
+            // creating a thread that will call LoadLibraryA with allocMemAddress as argument
+            // All that's needed for 32 bit injection is the right library address... How hard can it be?
+            return CreateRemoteThread(procHandle, IntPtr.Zero, 0, loadLibraryAddr, allocMemAddress, 0, IntPtr.Zero) != IntPtr.Zero;
         }
     }
 }

@@ -38,12 +38,12 @@
                     <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16">Injectable</TextBlock>
                     <Button Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Inject" FontSize="14" Width="50" Click="InjectClick">
                         <Button.ToolTip>
-                            <ToolTip>Use this device as default controller</ToolTip>
+                            <ToolTip>Inject X1nput into the selected process</ToolTip>
                         </Button.ToolTip>
                     </Button>
                     <Button Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Refresh" FontSize="14" Width="60" Click="RefreshClick">
                         <Button.ToolTip>
-                            <ToolTip>Use this device as default controller</ToolTip>
+                            <ToolTip>Refresh the process list</ToolTip>
                         </Button.ToolTip>
                     </Button>
                     <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Center">
@@ -68,8 +68,16 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16">Injected</TextBlock>
-                    <Button Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Unload" FontSize="14" Width="60" Click="UnloadClick"/>
-                    <Button Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Reload" FontSize="14" Width="60" Click="ReloadClick"/>
+                    <Button Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Unload" FontSize="14" Width="60" Click="UnloadClick">
+                        <Button.ToolTip>
+                            <ToolTip>Unload X1nput from the selected process</ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+                    <Button Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Reload" FontSize="14" Width="60" Click="ReloadClick">
+                        <Button.ToolTip>
+                            <ToolTip>Reload X1nput in the selected process</ToolTip>
+                        </Button.ToolTip>
+                    </Button>
                 </Grid>
             </Grid>
         </Grid>

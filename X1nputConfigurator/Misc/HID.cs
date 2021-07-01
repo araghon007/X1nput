@@ -1,7 +1,7 @@
 ﻿// Thanks to wqaxs36 https://www.codeproject.com/Articles/1244702/How-to-Communicate-with-its-USB-Devices-using-HID
 
 using System;
-using System.Diagnostics.Eventing.Reader;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -9,7 +9,6 @@ namespace X1nputConfigurator.Misc
 {
     public static class HID
     {
-
 
         #region WinAPI
 
@@ -30,10 +29,7 @@ namespace X1nputConfigurator.Misc
 
         [DllImport("kernel32.dll")]
         static extern bool WriteFile(IntPtr hFile, [Out] byte[] lpBuffer, uint nNumberOfBytesToWrite, ref uint lpNumberOfBytesWritten, IntPtr lpOverlapped);
-
-        [DllImport("kernel32.dll")]
-        static extern bool ReadFile(IntPtr hFile, [Out] byte[] lpBuffer, uint nNumberOfBytesToRead, ref uint lpNumberOfBytesRead, IntPtr lpOverlapped);
-
+        
         [DllImport("hid.dll")]
         static extern void HidD_GetHidGuid(ref Guid Guid);
 
@@ -47,22 +43,7 @@ namespace X1nputConfigurator.Misc
         static extern uint HidP_GetCaps(IntPtr PreparsedData, ref HIDP_CAPS Capabilities);
 
         [DllImport("hid.dll", SetLastError = true)]
-        static extern int HidP_GetButtonCaps(HIDP_REPORT_TYPE ReportType, [In, Out] HIDP_BUTTON_CAPS[] ButtonCaps, ref ushort ButtonCapsLength, IntPtr PreparsedData);
-
-        [DllImport("hid.dll", SetLastError = true)]
-        static extern int HidP_GetValueCaps(HIDP_REPORT_TYPE ReportType, [In, Out] HIDP_VALUE_CAPS[] ValueCaps, ref ushort ValueCapsLength, IntPtr PreparsedData);
-
-        [DllImport("hid.dll", SetLastError = true)]
-        static extern int HidP_MaxUsageListLength(HIDP_REPORT_TYPE ReportType, ushort UsagePage, IntPtr PreparsedData);
-
-        [DllImport("hid.dll", SetLastError = true)]
-        static extern int HidP_SetUsages(HIDP_REPORT_TYPE ReportType, ushort UsagePage, short LinkCollection, short Usages, ref int UsageLength, IntPtr PreparsedData, IntPtr Report, int ReportLength);
-
-        [DllImport("hid.dll", SetLastError = true)]
-        static extern int HidP_SetUsageValue(HIDP_REPORT_TYPE ReportType, ushort UsagePage, short LinkCollection, ushort Usage, ulong UsageValue, IntPtr PreparsedData, IntPtr Report, int ReportLength);
-
-        [DllImport("hid.dll", SetLastError = true)]
-        static extern bool HidD_GetProductString(IntPtr HidDeviceObject, byte[] Buffer, Int32 BufferLength);
+        static extern bool HidD_GetProductString(IntPtr HidDeviceObject, byte[] Buffer, int BufferLength);
 
         [DllImport("setupapi.dll", SetLastError = true)]
         static extern bool SetupDiDestroyDeviceInfoList(IntPtr DeviceInfoSet);
@@ -72,46 +53,25 @@ namespace X1nputConfigurator.Misc
 
         [DllImport("hid.dll", SetLastError = true)]
         static extern bool HidD_FreePreparsedData(ref IntPtr PreparsedData);
-
-        [DllImport("kernel32.dll")]
-        static extern uint GetLastError();
-
+        
         #endregion
 
         #region DLL Var
 
         static IntPtr hardwareDeviceInfo;
 
-        static ushort DEVICE_VID, DEVICE_VIDa;
-        static ushort DEVICE_PID, DEVICE_PIDa;
-        static ushort USAGE_PAGE;
-        static ushort USAGE;
-        static byte REPORT_ID;
-
-        const int DIGCF_DEFAULT = 0x00000001;
         const int DIGCF_PRESENT = 0x00000002;
-        const int DIGCF_ALLCLASSES = 0x00000004;
-        const int DIGCF_PROFILE = 0x00000008;
         const int DIGCF_DEVICEINTERFACE = 0x00000010;
 
         const uint GENERIC_READ = 0x80000000;
         const uint GENERIC_WRITE = 0x40000000;
-        const uint GENERIC_EXECUTE = 0x20000000;
-        const uint GENERIC_ALL = 0x10000000;
 
         const uint FILE_SHARE_READ = 0x00000001;
         const uint FILE_SHARE_WRITE = 0x00000002;
-        const uint FILE_SHARE_DELETE = 0x00000004;
 
-        const uint CREATE_NEW = 1;
-        const uint CREATE_ALWAYS = 2;
         const uint OPEN_EXISTING = 3;
-        const uint OPEN_ALWAYS = 4;
-        const uint TRUNCATE_EXISTING = 5;
 
-        const int HIDP_STATUS_SUCCESS = 1114112;
         const int DEVICE_PATH = 260;
-        const int INVALID_HANDLE_VALUE = -1;
 
         enum FileMapProtection : uint
         {
@@ -125,36 +85,13 @@ namespace X1nputConfigurator.Misc
             SectionNoCache = 0x10000000,
             SectionReserve = 0x4000000,
         }
-
-        enum HIDP_REPORT_TYPE : ushort
-        {
-            HidP_Input = 0x00,
-            HidP_Output = 0x01,
-            HidP_Feature = 0x02,
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct LIST_ENTRY
-        {
-            public IntPtr Flink;
-            public IntPtr Blink;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct DEVICE_LIST_NODE
-        {
-            public LIST_ENTRY Hdr;
-            public IntPtr NotificationHandle;
-            public HID_DEVICE HidDeviceInfo;
-            public bool DeviceOpened;
-        }
-
+        
         [StructLayout(LayoutKind.Sequential)]
         public struct SP_DEVICE_INTERFACE_DATA
         {
-            public Int32 cbSize;
+            public int cbSize;
             public Guid interfaceClassGuid;
-            public Int32 flags;
+            public int flags;
             private UIntPtr reserved;
         }
 
@@ -167,67 +104,58 @@ namespace X1nputConfigurator.Misc
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct SP_DEVINFO_DATA
-        {
-            public int cbSize;
-            public Guid classGuid;
-            public UInt32 devInst;
-            public IntPtr reserved;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
         public struct HIDP_CAPS
         {
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 Usage;
+            public ushort Usage;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 UsagePage;
+            public ushort UsagePage;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 InputReportByteLength;
+            public ushort InputReportByteLength;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 OutputReportByteLength;
+            public ushort OutputReportByteLength;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 FeatureReportByteLength;
+            public ushort FeatureReportByteLength;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
-            public UInt16[] Reserved;
+            public ushort[] Reserved;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberLinkCollectionNodes;
+            public ushort NumberLinkCollectionNodes;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberInputButtonCaps;
+            public ushort NumberInputButtonCaps;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberInputValueCaps;
+            public ushort NumberInputValueCaps;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberInputDataIndices;
+            public ushort NumberInputDataIndices;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberOutputButtonCaps;
+            public ushort NumberOutputButtonCaps;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberOutputValueCaps;
+            public ushort NumberOutputValueCaps;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberOutputDataIndices;
+            public ushort NumberOutputDataIndices;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberFeatureButtonCaps;
+            public ushort NumberFeatureButtonCaps;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberFeatureValueCaps;
+            public ushort NumberFeatureValueCaps;
             [MarshalAs(UnmanagedType.U2)]
-            public UInt16 NumberFeatureDataIndices;
+            public ushort NumberFeatureDataIndices;
         };
 
         [StructLayout(LayoutKind.Sequential)]
         public struct HIDD_ATTRIBUTES
         {
-            public Int32 Size;
-            public UInt16 VendorID;
-            public UInt16 ProductID;
-            public Int16 VersionNumber;
+            public int Size;
+            public ushort VendorID;
+            public ushort ProductID;
+            public short VersionNumber;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ButtonData
         {
-            public Int32 UsageMin;
-            public Int32 UsageMax;
-            public Int32 MaxUsageLength;
-            public Int16 Usages;
+            public int UsageMin;
+            public int UsageMax;
+            public int MaxUsageLength;
+            public short Usages;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -250,9 +178,9 @@ namespace X1nputConfigurator.Misc
             [FieldOffset(2)]
             public ushort UsagePage;
             [FieldOffset(4)]
-            public Int32 Status;
+            public int Status;
             [FieldOffset(8)]
-            public Int32 ReportID;
+            public int ReportID;
             [FieldOffset(16)]
             public bool IsDataSet;
 
@@ -391,19 +319,19 @@ namespace X1nputConfigurator.Misc
 
             public IntPtr[] InputReportBuffer;
             public HID_DATA[] InputData;
-            public Int32 InputDataLength;
+            public int InputDataLength;
             public HIDP_BUTTON_CAPS[] InputButtonCaps;
             public HIDP_VALUE_CAPS[] InputValueCaps;
 
             public IntPtr[] OutputReportBuffer;
             public HID_DATA[] OutputData;
-            public Int32 OutputDataLength;
+            public int OutputDataLength;
             public HIDP_BUTTON_CAPS[] OutputButtonCaps;
             public HIDP_VALUE_CAPS[] OutputValueCaps;
 
             public IntPtr[] FeatureReportBuffer;
             public HID_DATA[] FeatureData;
-            public Int32 FeatureDataLength;
+            public int FeatureDataLength;
             public HIDP_BUTTON_CAPS[] FeatureButtonCaps;
             public HIDP_VALUE_CAPS[] FeatureValueCaps;
         }
@@ -416,8 +344,8 @@ namespace X1nputConfigurator.Misc
         /// <param name="HidDevice">Device to vibrate</param>
         public static void Write(HID_DEVICE HidDevice)
         {
-            Byte[] Report = new Byte[16];
-            UInt32 tmp = 0;
+            byte[] Report = new byte[16];
+            uint tmp = 0;
 
             Report[0] = 0x03; // HID report ID (3 for bluetooth, any for USB)
             Report[1] = 0x0F; // Motor flag mask(?)
@@ -436,10 +364,11 @@ namespace X1nputConfigurator.Misc
         public static string GetProductString(HID_DEVICE HidDevice)
         {
             var chars = new byte[255];
+
             if (HidD_GetProductString(HidDevice.HidDevice, chars, 255))
                 return Encoding.UTF8.GetString(chars);
-            else
-                return null;
+            
+            return null;
         }
 
         public static void CloseHidDevice(HID_DEVICE HidDevice)
@@ -447,7 +376,7 @@ namespace X1nputConfigurator.Misc
             CloseHandle(HidDevice.HidDevice);
         }
 
-        static void OpenHidDevice(string DevicePath, ref HID_DEVICE[] HidDevice, int iHIDD)
+        static HID_DEVICE OpenHidDevice(string DevicePath)
         {
             /*++
             RoutineDescription:
@@ -457,7 +386,9 @@ namespace X1nputConfigurator.Misc
             HID_DEVICE structure.
             --*/
 
-            HidDevice[iHIDD].DevicePath = DevicePath;
+            var HidDevice = new HID_DEVICE();
+
+            HidDevice.DevicePath = DevicePath;
 
             //
             //  The hid.dll api's do not pass the overlapped structure into deviceiocontrol
@@ -465,10 +396,9 @@ namespace X1nputConfigurator.Misc
             //  an overlapped device we will close the device below and get a handle to an
             //  overlapped device
             //
-            CloseHandle(HidDevice[iHIDD].HidDevice);
-            HidDevice[iHIDD].HidDevice = CreateFile(HidDevice[iHIDD].DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, IntPtr.Zero);
-            HidDevice[iHIDD].Caps = new HIDP_CAPS();
-            HidDevice[iHIDD].Attributes = new HIDD_ATTRIBUTES();
+            HidDevice.HidDevice = CreateFile(HidDevice.DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, IntPtr.Zero);
+            HidDevice.Caps = new HIDP_CAPS();
+            HidDevice.Attributes = new HIDD_ATTRIBUTES();
 
             //
             // If the device was not opened as overlapped, then fill in the rest of the
@@ -476,12 +406,12 @@ namespace X1nputConfigurator.Misc
             //  be used in the calls to the HidD_ exported functions since each of these
             //  functions does synchronous I/O.
             //
-            HidD_FreePreparsedData(ref HidDevice[iHIDD].Ppd);
-            HidDevice[iHIDD].Ppd = IntPtr.Zero;
-            HidD_GetPreparsedData(HidDevice[iHIDD].HidDevice, ref HidDevice[iHIDD].Ppd);
-            HidD_GetAttributes(HidDevice[iHIDD].HidDevice, ref HidDevice[iHIDD].Attributes);
-            if(HidDevice[iHIDD].HidDevice != IntPtr.Zero){}
-                HidP_GetCaps(HidDevice[iHIDD].Ppd, ref HidDevice[iHIDD].Caps);
+            HidD_FreePreparsedData(ref HidDevice.Ppd);
+            HidDevice.Ppd = IntPtr.Zero;
+            HidD_GetPreparsedData(HidDevice.HidDevice, ref HidDevice.Ppd);
+            HidD_GetAttributes(HidDevice.HidDevice, ref HidDevice.Attributes);
+            if(HidDevice.HidDevice != IntPtr.Zero)
+                HidP_GetCaps(HidDevice.Ppd, ref HidDevice.Caps);
 
             //MessageBox.Show(GetLastError().ToString());
 
@@ -499,33 +429,11 @@ namespace X1nputConfigurator.Misc
             //    of the usages in the device.
             //
             //FillDeviceInfo(ref HidDevice);
+
+            return HidDevice;
         }
 
-        public static int FindNumberDevices()
-        {
-            Guid hidGuid = new Guid();
-            SP_DEVICE_INTERFACE_DATA deviceInfoData = new SP_DEVICE_INTERFACE_DATA();
-            int index = 0;
-
-            HidD_GetHidGuid(ref hidGuid);
-
-            //
-            // Open a handle to the plug and play dev node.
-            //
-            SetupDiDestroyDeviceInfoList(hardwareDeviceInfo);
-            hardwareDeviceInfo = SetupDiGetClassDevs(ref hidGuid, IntPtr.Zero, IntPtr.Zero, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
-            deviceInfoData.cbSize = Marshal.SizeOf(typeof(SP_DEVICE_INTERFACE_DATA));
-
-            index = 0;
-            while (SetupDiEnumDeviceInterfaces(hardwareDeviceInfo, IntPtr.Zero, ref hidGuid, index, ref deviceInfoData))
-            {
-                index++;
-            }
-
-            return (index);
-        }
-
-        public static int FindKnownHidDevices(ref HID_DEVICE[] HidDevices)
+        public static HID_DEVICE[] FindKnownHidDevices()
         {
             int iHIDD;
             int RequiredLength;
@@ -544,6 +452,9 @@ namespace X1nputConfigurator.Misc
             deviceInfoData.cbSize = Marshal.SizeOf(typeof(SP_DEVICE_INTERFACE_DATA));
 
             iHIDD = 0;
+
+            var HidDevices = new List<HID_DEVICE>();
+
             while (SetupDiEnumDeviceInterfaces(hardwareDeviceInfo, IntPtr.Zero, ref hidGuid, iHIDD, ref deviceInfoData))
             {
                 RequiredLength = 0;
@@ -567,12 +478,19 @@ namespace X1nputConfigurator.Misc
                 //
                 // Open device with just generic query abilities to begin with
                 //
-                OpenHidDevice(functionClassDeviceData.DevicePath, ref HidDevices, iHIDD);
+                try
+                {
+                    HidDevices.Add(OpenHidDevice(functionClassDeviceData.DevicePath));
+                }
+                catch
+                {
+                    // Can cause a crash on Windows 7. Not that it works anyway, but ¯\_(ツ)_/¯
+                }
 
                 iHIDD++;
             }
 
-            return iHIDD;
+            return HidDevices.ToArray();
         }
     }
 }

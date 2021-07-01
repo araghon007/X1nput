@@ -4,6 +4,3 @@
 [submodule "X1nput/minhook"]
 	path = X1nput/minhook
 	url = https://github.com/TsudaKageyu/minhook
-[submodule "X1nputConfigurator/Misc/CompactJson"]
-	path = X1nputConfigurator/Misc/CompactJson
-	url = https://github.com/pupsette/CompactJson

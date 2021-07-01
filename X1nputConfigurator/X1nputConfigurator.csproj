@@ -39,25 +39,6 @@
   <PropertyGroup>
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>none</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -99,66 +80,6 @@
     <Compile Include="ConfigurationWindow.xaml.cs">
       <DependentUpon>ConfigurationWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Misc\CompactJson\src\CompactJson\ArrayConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ArrayConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\BooleanConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ByteArrayConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\CharConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\CollectionConverterBase.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ConverterBase.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ConverterFactoryHelper.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ConverterRegistry.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\CustomConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\DateTimeConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\DictionaryConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\DictionaryConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\DoubleConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\EnumConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\EnumConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\FloatConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\GuidConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\IConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\IConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\IConverterInitialization.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\IJsonArrayConsumer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\IJsonConsumer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\IJsonObjectConsumer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\Int32Converter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\Int64Converter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ITypeNameResolver.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonArray.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonBoolean.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonCustomConverterAttribute.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonEmitNullValueAttribute.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonHashCodeBuilder.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonIgnoreMemberAttribute.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonNull.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonNumber.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonObject.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonPropertyAttribute.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonString.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonSuppressDefaultValueAttribute.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonTypeNameAttribute.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonValue.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonValueConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\JsonValueJsonConsumer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ListConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ListConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ModelJsonConsumer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\NullableConverterBase.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\NullableConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ObjectConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ObjectConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\ParserException.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\Serializer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\StringConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\TextWriterJsonConsumer.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\TypedConverter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\TypedConverterFactory.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\TypeNameResolver.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\UInt32Converter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\UInt64Converter.cs" />
-    <Compile Include="Misc\CompactJson\src\CompactJson\UnspecificConverter.cs" />
     <Compile Include="Misc\Constants.cs" />
     <Compile Include="ControllerSetupWindow.xaml.cs">
       <DependentUpon>ControllerSetupWindow.xaml</DependentUpon>
@@ -172,7 +93,25 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Misc\Settings.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\DataDirectoryParsers.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\ExportFunction.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\NativeStructureParsers.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ExportedFunctionsParser.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageDosHeaderParser.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageExportDirectoriesParser.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageNtHeadersParser.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageSectionHeadersParser.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\SafeParser.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\PeFile.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\AbstractStructure.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_DATA_DIRECTORY.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_DOS_HEADER.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_EXPORT_DIRECTORY.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_FILE_HEADER.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_NT_HEADERS.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_OPTIONAL_HEADER.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_SECTION_HEADER.cs" />
+    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Utilities\ExtensionMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -190,8 +129,8 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Misc\CompactJson\LICENSE" />
-    <None Include="Misc\CompactJson\README.md" />
+    <None Include="Misc\PeNet-1.6.1\LICENSE" />
+    <None Include="Misc\PeNet-1.6.1\README.md" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -209,8 +148,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(PlatformName) == x86 (
-copy /y "$(ProjectDir)bin\x86\$(ConfigurationName)\X1nputConfigurator.exe" "$(ProjectDir)bin\$(ConfigurationName)\X1nputConfigurator32.exe"
-)</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>

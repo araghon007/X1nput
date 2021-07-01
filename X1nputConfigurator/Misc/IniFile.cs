@@ -39,7 +39,7 @@ namespace X1nputConfigurator.Misc
         /// Value Name
         public void IniWriteValue(string Section, string Key, string Value)
         {
-            WritePrivateProfileString(Section, Key, Value, this.path);
+            WritePrivateProfileString(Section, Key, Value, path);
         }
 
         /// <summary>
@@ -52,8 +52,7 @@ namespace X1nputConfigurator.Misc
         public string IniReadValue(string Section, string Key, string Default = "")
         {
             StringBuilder temp = new StringBuilder(255);
-            int i = GetPrivateProfileString(Section, Key, Default, temp,
-                255, this.path);
+            int i = GetPrivateProfileString(Section, Key, Default, temp, 255, path);
             return temp.ToString();
 
         }

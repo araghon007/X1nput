@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using X1nputConfigurator.Misc;
+using X1nputConfigurator.Properties;
 
 namespace X1nputConfigurator
 {
@@ -14,27 +17,25 @@ namespace X1nputConfigurator
     public partial class MainWindow : Window
     {
 
-        private List<Process> foundProcesses = new List<Process>();
+        private List<ProcessInfo> foundProcesses = new List<ProcessInfo>();
 
-        private List<Process> injectedProcesses = new List<Process>();
-
-
-
-        /* Maybe later
-
+        private List<ProcessInfo> injectedProcesses = new List<ProcessInfo>();
+        
         [DllImport("psapi.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         public static extern int EnumProcessModulesEx(IntPtr hProcess, [Out] IntPtr lphModule, uint cb, out uint lpcbNeeded, uint dwFilterFlag);
 
         [DllImport("psapi.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         public static extern int GetModuleFileNameEx(IntPtr hProcess, IntPtr hModule, [Out] StringBuilder lpFilename, uint nSize);
 
-        */
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
 
         public MainWindow()
         {
             InitializeComponent();
 
-            OverrideConfig.IsChecked = Settings.Data.OverrideConfig;
+            OverrideConfig.IsChecked = Settings.Default.OverrideConfig;
         }
 
         void RefreshProcesses()
@@ -57,17 +58,12 @@ namespace X1nputConfigurator
                 if (process.SessionId == sessionId)
                 {
                     // I want YOU for the search of a way to check the elevation status of a process... Or you could just, y'know, run the app as an administrator (This applied back when I just tried to use process.MainModule to see if this process has access)
-                    var test = false;
                     try
                     {
-                        test = process.MainModule.FileName.StartsWith(winRoot.FullName);
+                        if (process.MainModule.FileName.StartsWith(winRoot.FullName))
+                            continue;
                     }
                     catch
-                    {
-                        continue;
-                    }
-
-                    if (test)
                     {
                         continue;
                     }
@@ -77,8 +73,6 @@ namespace X1nputConfigurator
                     var foundX1nput = false;
 
 
-                    // I won't give up on injecting to 32 bit processes from 64 bit app just yet
-                    /*
                     // Setting up the variable for the second argument for EnumProcessModules
                     IntPtr[] hMods = new IntPtr[1024];
 
@@ -86,72 +80,78 @@ namespace X1nputConfigurator
                     IntPtr pModules = gch.AddrOfPinnedObject();
 
                     // Setting up the rest of the parameters for EnumProcessModules
-                    uint uiSize = (uint)(Marshal.SizeOf(typeof(IntPtr)) * (hMods.Length));
-                    uint cbNeeded = 0;
+                    uint uiSize = (uint)(Marshal.SizeOf(typeof(IntPtr)) * hMods.Length);
 
-                    if (EnumProcessModulesEx(process.Handle, pModules, uiSize, out cbNeeded, 0x03) == 1)
+                    IntPtr kernel32 = IntPtr.Zero;
+
+                    var isWOW64 = false;
+
+                    if (EnumProcessModulesEx(process.Handle, pModules, uiSize, out var cbNeeded, 0x03) == 1)
                     {
-                        Int32 uiTotalNumberofModules = (Int32)(cbNeeded / (Marshal.SizeOf(typeof(IntPtr))));
+                        int uiTotalNumberofModules = (int)(cbNeeded / Marshal.SizeOf(typeof(IntPtr)));
 
-                        for (int i = 0; i < (int)uiTotalNumberofModules; i++)
+                        for (int i = 0; i < uiTotalNumberofModules; i++)
                         {
                             StringBuilder strbld = new StringBuilder(1024);
 
-                            GetModuleFileNameEx(process.Handle, hMods[i], strbld, (uint)(strbld.Capacity));
-
+                            GetModuleFileNameEx(process.Handle, hMods[i], strbld, (uint)strbld.Capacity);
+                            
                             var lower = strbld.ToString().ToLower();
-                            if (lower.Contains("xinput"))
+                            if (lower.EndsWith(".dll"))
                             {
-                                foundXinput = true;
-                            }
-
-                            if (lower.Contains("x1nput") && !lower.Contains("x1nputconfigurator"))
-                            {
-                                foundX1nput = true;
+                                if (lower.Contains("kernel32"))
+                                {
+                                    kernel32 = hMods[i];
+                                    if (IsWow64Process(process.Handle, out bool temp))
+                                        isWOW64 = temp && IntPtr.Size == 8;
+                                }
+                                else if (lower.Contains("x1nput"))
+                                {
+                                    foundX1nput = true;
+                                }
+                                else if (lower.Contains("xinput"))
+                                {
+                                    foundXinput = true;
+                                }
                             }
                         }
-                        Debug.WriteLine("Number of Modules: " + uiTotalNumberofModules);
-                        Debug.WriteLine("");
                     }
 
                     // Must free the GCHandle object
                     gch.Free();
-                    */
-                    // Wouldn't list 32-bit modules in 32-bit processes so I had to replace it with PInvoke
-
-                    
-                    foreach (ProcessModule module in process.Modules)
-                    {
-                        var name = module.ModuleName.ToLower();
-                        if (!foundXinput && name.StartsWith("xinput"))
-                        {
-                            foundXinput = true;
-                        }
-                        if (name.StartsWith("x1nput") && !name.StartsWith("x1nputconfigurator"))
-                        {
-                            foundX1nput = true;
-                            break;
-                        }
-                    }
                     
                     if (foundX1nput)
                     {
-                        var proc = new ListBoxItem()
+                        var proc = new ListBoxItem
                         {
                             Content = process.ProcessName,
                         };
 
-                        injectedProcesses.Add(process);
+                        var processInfo = new ProcessInfo
+                        {
+                            Process = process,
+                            Kernel32 = kernel32,
+                            IsWOW64 = isWOW64
+                        };
+
+                        injectedProcesses.Add(processInfo);
                         InjectedProcesses.Items.Add(proc);
                     }
                     else if (foundXinput)
                     {
-                        var proc = new ListBoxItem()
+                        var proc = new ListBoxItem
                         {
                             Content = process.ProcessName,
                         };
 
-                        foundProcesses.Add(process);
+                        var processInfo = new ProcessInfo
+                        {
+                            Process = process,
+                            Kernel32 = kernel32,
+                            IsWOW64 = isWOW64
+                        };
+
+                        foundProcesses.Add(processInfo);
                         Processes.Items.Add(proc);
                     }
                 }
@@ -172,19 +172,22 @@ namespace X1nputConfigurator
             {
                 var process = foundProcesses[sel];
 
-                Injector.Inject(process);
-                foundProcesses.RemoveAt(sel);
-                Processes.Items.RemoveAt(sel);
+                CopyConfig(process.Process);
 
-                CopyConfig(process);
-
-                var proc = new ListBoxItem()
+                if (Injector.Inject(process))
                 {
-                    Content = process.ProcessName,
-                };
+                    foundProcesses.RemoveAt(sel);
+                    Processes.Items.RemoveAt(sel);
 
-                injectedProcesses.Add(process);
-                InjectedProcesses.Items.Add(proc);
+
+                    var proc = new ListBoxItem
+                    {
+                        Content = process.Process.ProcessName,
+                    };
+
+                    injectedProcesses.Add(process);
+                    InjectedProcesses.Items.Add(proc);
+                }
             }
         }
 
@@ -201,17 +204,19 @@ namespace X1nputConfigurator
             {
                 var process = injectedProcesses[sel];
 
-                Injector.UnDeInject(process);
-                injectedProcesses.RemoveAt(sel);
-                InjectedProcesses.Items.RemoveAt(sel);
-
-                var proc = new ListBoxItem()
+                if (Injector.Unload(process))
                 {
-                    Content = process.ProcessName,
-                };
+                    injectedProcesses.RemoveAt(sel);
+                    InjectedProcesses.Items.RemoveAt(sel);
 
-                foundProcesses.Add(process);
-                Processes.Items.Add(proc);
+                    var proc = new ListBoxItem
+                    {
+                        Content = process.Process.ProcessName,
+                    };
+
+                    foundProcesses.Add(process);
+                    Processes.Items.Add(proc);
+                }
             }
         }
 
@@ -221,10 +226,10 @@ namespace X1nputConfigurator
             {
                 var process = injectedProcesses[InjectedProcesses.SelectedIndex];
 
-                CopyConfig(process);
+                CopyConfig(process.Process);
 
-                Injector.UnDeInject(process);
-                Injector.Inject(process);
+                if(Injector.Unload(process))
+                    Injector.Inject(process);
             }
         }
 
@@ -240,8 +245,8 @@ namespace X1nputConfigurator
 
         private void OverrideConfig_OnClick(object sender, RoutedEventArgs e)
         {
-            Settings.Data.OverrideConfig = OverrideConfig.IsChecked ?? false;
-            Settings.Save();
+            Settings.Default.OverrideConfig = OverrideConfig.IsChecked ?? false;
+            Settings.Default.Save();
         }
     }
 }

@@ -22,5 +22,17 @@ namespace X1nputConfigurator.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool OverrideConfig {
+            get {
+                return ((bool)(this["OverrideConfig"]));
+            }
+            set {
+                this["OverrideConfig"] = value;
+            }
+        }
     }
 }

@@ -34,9 +34,7 @@ namespace X1nputConfigurator
                 HID.CloseHidDevice(device);
             }
             foundDevices.Clear();
-            var numDevices = HID.FindNumberDevices();
-            var devices = new HID.HID_DEVICE[numDevices];
-            HID.FindKnownHidDevices(ref devices);
+            var devices = HID.FindKnownHidDevices();
 
             var vendor = int.Parse(Constants.Config.IniReadValue("Controller", "VendorID", "1118"));
 
