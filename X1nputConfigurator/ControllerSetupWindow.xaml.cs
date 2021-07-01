@@ -46,9 +46,6 @@ namespace X1nputConfigurator
                     var split2 = split.Last();
                     var split3 = split2.Split('#');
 
-                    var split4 = split3[1].Split('&');
-                    var split5 = split4[2].Split('_');
-
                     var devicePath = string.Join(@"\", split3, 0, 3).ToUpper();
 
                     var name = HID.GetProductString(device);
@@ -56,9 +53,17 @@ namespace X1nputConfigurator
                     if (Constants.ControllerIDs.ContainsKey(device.Attributes.ProductID))
                         name = Constants.ControllerIDs[device.Attributes.ProductID];
 
-                    uint id;
-                    if (uint.TryParse(split5[1], NumberStyles.HexNumber, null, out id) && id > 0)
-                        name += $" ({id / 2})";
+                    var split4 = split3[1].Split('&');
+                    foreach (var test in split4)
+                    {
+                        if (test.StartsWith("ig"))
+                        {
+                            var split5 = test.Split('_');
+
+                            if (uint.TryParse(split5[1], NumberStyles.HexNumber, null, out uint id) && id > 0)
+                                name += $" ({id / 2})";
+                        }
+                    }
 
                     var dev = new ListBoxItem()
                     {
