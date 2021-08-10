@@ -194,6 +194,10 @@
     <ClInclude Include="minhook\src\hde\table32.h" />
     <ClInclude Include="minhook\src\hde\table64.h" />
     <ClInclude Include="minhook\src\trampoline.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="X1nput.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -46,5 +46,9 @@
     <ClInclude Include="minhook\src\trampoline.h">
       <Filter>MinHook</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="X1nput.rc" />
   </ItemGroup>
 </Project>
