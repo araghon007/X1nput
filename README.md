@@ -15,7 +15,10 @@ There's no way for the game to know whether the controller supports impulse trig
 ![image](https://user-images.githubusercontent.com/10870921/124172613-5462f900-daaa-11eb-9fcc-f357f7255a1b.png)
 									 
 3. From the list, select the name of the game you want to use X1nput in and press Inject
+
 ![image](https://user-images.githubusercontent.com/10870921/124172887-a86ddd80-daaa-11eb-8e35-47ceedbbd0fe.png)
+
+	IMPORTANT: If you're using Steam's Xbox Configuration Support, you need to inject into steam instead
 
 4. Enjoy trigger rumble
 
