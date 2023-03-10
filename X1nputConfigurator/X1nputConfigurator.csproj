@@ -93,25 +93,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\DataDirectoryParsers.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\ExportFunction.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\NativeStructureParsers.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ExportedFunctionsParser.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageDosHeaderParser.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageExportDirectoriesParser.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageNtHeadersParser.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\ImageSectionHeadersParser.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Parser\SafeParser.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\PeFile.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\AbstractStructure.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_DATA_DIRECTORY.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_DOS_HEADER.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_EXPORT_DIRECTORY.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_FILE_HEADER.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_NT_HEADERS.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_OPTIONAL_HEADER.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Structures\IMAGE_SECTION_HEADER.cs" />
-    <Compile Include="Misc\PeNet-1.6.1\src\PeNet\Utilities\ExtensionMethods.cs" />
+    <Compile Include="Misc\PeThing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -129,8 +111,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Misc\PeNet-1.6.1\LICENSE" />
-    <None Include="Misc\PeNet-1.6.1\README.md" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

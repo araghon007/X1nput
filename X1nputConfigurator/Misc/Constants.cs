@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PeNet;
 
 namespace X1nputConfigurator.Misc
 {
     public static class Constants
     {
+        private const string LoadLibraryName = "LoadLibraryA";
+        private const string FreeLibraryName = "FreeLibraryAndExitThread";
         public static Dictionary<uint, string> ControllerIDs = new Dictionary<uint, string>
         {
             {0x2FF, "Xbox Controller (Wired)"},
@@ -26,27 +27,15 @@ namespace X1nputConfigurator.Misc
         
         static Constants()
         {
-            var kernel = new PeFile($@"{Environment.GetFolderPath(Environment.SpecialFolder.System)}\kernel32.dll");
-            var kernelExports = kernel.ExportedFunctions;
-            foreach (var export in kernelExports)
-            {
-                if (export.Name == "LoadLibraryA")
-                    LoadLibrary = (int) export.Address;
-                else if(export.Name == "FreeLibraryAndExitThread")
-                    FreeLibrary = (int)export.Address;
-            }
+            var kernel = PeThing.Parse($@"{Environment.GetFolderPath(Environment.SpecialFolder.System)}\kernel32.dll");
+            LoadLibrary = kernel.GetExportAddress(LoadLibraryName);
+            FreeLibrary = kernel.GetExportAddress(FreeLibraryName);
 
             if (IntPtr.Size == 8) // The best 64-bit detection out there
             {
-                var kernel32  = new PeFile($@"{Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)}\kernel32.dll");
-                var kernelExports32 = kernel32.ExportedFunctions;
-                foreach (var export in kernelExports32)
-                {
-                    if (export.Name == "LoadLibraryA")
-                        LoadLibrary32 = (int)export.Address;
-                    else if (export.Name == "FreeLibraryAndExitThread")
-                        FreeLibrary32 = (int)export.Address;
-                }
+                var kernel32 = PeThing.Parse($@"{Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)}\kernel32.dll");
+                LoadLibrary32 = kernel32.GetExportAddress(LoadLibraryName);
+                FreeLibrary32 = kernel32.GetExportAddress(FreeLibraryName);
             }
         }
     }
