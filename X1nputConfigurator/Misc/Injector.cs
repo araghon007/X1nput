@@ -1,9 +1,9 @@
 ﻿// Thanks to Dan Sporici https://codingvision.net/c-inject-a-dll-into-a-process-w-createremotethread
 
 using System;
+using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace X1nputConfigurator.Misc
 {
@@ -76,14 +76,15 @@ namespace X1nputConfigurator.Misc
 
                     GetModuleFileNameEx(procHandle, hMods[i], strbld, (uint)strbld.Capacity);
 
-                    var lower = strbld.ToString().ToLower();
-
                     if (strbld.ToString().ToLower().Contains("x1nput"))
                     {
                         return CreateRemoteThread(procHandle, IntPtr.Zero, 0, freeLibraryAddr, hMods[i], 0, IntPtr.Zero) != IntPtr.Zero;
                     }
                 }
             }
+
+            // Must free the GCHandle object
+            gch.Free();
 
             return false;
         }

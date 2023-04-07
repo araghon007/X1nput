@@ -20,7 +20,7 @@ namespace X1nputConfigurator
         private List<ProcessInfo> foundProcesses = new List<ProcessInfo>();
 
         private List<ProcessInfo> injectedProcesses = new List<ProcessInfo>();
-        
+
         [DllImport("psapi.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         public static extern int EnumProcessModulesEx(IntPtr hProcess, [Out] IntPtr lphModule, uint cb, out uint lpcbNeeded, uint dwFilterFlag);
 
@@ -45,8 +45,6 @@ namespace X1nputConfigurator
             // Don't have access to processes outside of our current session... I think
             var sessionId = Process.GetCurrentProcess().SessionId;
 
-            var winRoot = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.System));
-
             Processes.Items.Clear();
             InjectedProcesses.Items.Clear();
 
@@ -60,7 +58,7 @@ namespace X1nputConfigurator
                     // I want YOU for the search of a way to check the elevation status of a process... Or you could just, y'know, run the app as an administrator (This applied back when I just tried to use process.MainModule to see if this process has access)
                     try
                     {
-                        if (process.MainModule.FileName.StartsWith(winRoot.FullName))
+                        if (string.IsNullOrEmpty(process.MainModule.FileName))
                             continue;
                         if (process.Handle == IntPtr.Zero)
                             continue;
@@ -97,15 +95,15 @@ namespace X1nputConfigurator
                             StringBuilder strbld = new StringBuilder(1024);
 
                             GetModuleFileNameEx(process.Handle, hMods[i], strbld, (uint)strbld.Capacity);
-                            
+
                             var lower = strbld.ToString().ToLower();
                             if (lower.EndsWith(".dll"))
                             {
                                 if (lower.Contains("kernel32"))
                                 {
                                     kernel32 = hMods[i];
-                                    if (IsWow64Process(process.Handle, out bool temp))
-                                        isWOW64 = temp && IntPtr.Size == 8;
+                                    if (IsWow64Process(process.Handle, out bool isProcessWow64))
+                                        isWOW64 = isProcessWow64 && IntPtr.Size == 8;
                                 }
                                 else if (lower.Contains("x1nput"))
                                 {
@@ -121,7 +119,7 @@ namespace X1nputConfigurator
 
                     // Must free the GCHandle object
                     gch.Free();
-                    
+
                     if (foundX1nput)
                     {
                         var proc = new ListBoxItem
@@ -163,7 +161,7 @@ namespace X1nputConfigurator
         private void CopyConfig(Process process)
         {
             var path = Path.GetDirectoryName(process.MainModule.FileName);
-            if(OverrideConfig.IsChecked == true)
+            if (OverrideConfig.IsChecked == true)
                 File.Copy("X1nput.ini", $@"{path}\X1nput.ini", true);
         }
 
@@ -206,7 +204,12 @@ namespace X1nputConfigurator
             {
                 var process = injectedProcesses[sel];
 
-                if (Injector.Unload(process))
+                if (process.Process.HasExited)
+                {
+                    injectedProcesses.RemoveAt(sel);
+                    InjectedProcesses.Items.RemoveAt(sel);
+                }
+                else if (Injector.Unload(process))
                 {
                     injectedProcesses.RemoveAt(sel);
                     InjectedProcesses.Items.RemoveAt(sel);
@@ -224,14 +227,24 @@ namespace X1nputConfigurator
 
         private void ReloadClick(object sender, RoutedEventArgs e)
         {
-            if (InjectedProcesses.SelectedIndex != -1)
+            var sel = InjectedProcesses.SelectedIndex;
+
+            if (sel != -1)
             {
-                var process = injectedProcesses[InjectedProcesses.SelectedIndex];
+                var process = injectedProcesses[sel];
 
-                CopyConfig(process.Process);
+                if (process.Process.HasExited)
+                {
+                    injectedProcesses.RemoveAt(sel);
+                    InjectedProcesses.Items.RemoveAt(sel);
+                }
+                else
+                {
+                    CopyConfig(process.Process);
 
-                if(Injector.Unload(process))
-                    Injector.Inject(process);
+                    if (Injector.Unload(process))
+                        Injector.Inject(process);
+                }
             }
         }
 
