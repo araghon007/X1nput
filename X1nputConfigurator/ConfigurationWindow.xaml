@@ -93,24 +93,26 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center">
                 <StackPanel.ToolTip>
-                    <ToolTip>Right - use right motor values for trigger, Left - use left motor values for trigger, Both - average both left and right motor values</ToolTip>
+                    <ToolTip>Right - use right motor values for trigger, Left - use left motor values for trigger, Both - average both left and right motor values, Auto - choose a higher value between left and right motor values</ToolTip>
                 </StackPanel.ToolTip>
                 <Label VerticalAlignment="Center" FontSize="16">LeftTriggerLink</Label>
                 <ComboBox x:Name="LeftTriggerLink" MinWidth="70" VerticalAlignment="Center" SelectedIndex="0">
                     <ComboBoxItem>Right</ComboBoxItem>
                     <ComboBoxItem>Left</ComboBoxItem>
                     <ComboBoxItem>Both</ComboBoxItem>
+                    <ComboBoxItem>Auto</ComboBoxItem>
                 </ComboBox>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
                 <StackPanel.ToolTip>
-                    <ToolTip>Right - use right motor values for trigger, Left - use left motor values for trigger, Both - average both left and right motor values</ToolTip>
+                    <ToolTip>Right - use right motor values for trigger, Left - use left motor values for trigger, Both - average both left and right motor values, Auto - choose a higher value between left and right motor values</ToolTip>
                 </StackPanel.ToolTip>
                 <Label VerticalAlignment="Center" FontSize="16">RightTriggerLink</Label>
                 <ComboBox x:Name="RightTriggerLink" MinWidth="70" VerticalAlignment="Center" SelectedIndex="0">
                     <ComboBoxItem>Right</ComboBoxItem>
                     <ComboBoxItem>Left</ComboBoxItem>
                     <ComboBoxItem>Both</ComboBoxItem>
+                    <ComboBoxItem>Auto</ComboBoxItem>
                 </ComboBox>
             </StackPanel>
         </Grid>
