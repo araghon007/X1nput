@@ -112,13 +112,16 @@ namespace X1nputConfigurator.Misc
             {
                 dllName = $@"{Environment.CurrentDirectory}\X1nput64.dll";
             }
+
+            byte[] dllNameBytes = Encoding.Default.GetBytes(dllName);
+
             // alocating some memory on the target process - enough to store the name of the dll
             // and storing its address in a pointer
-            IntPtr allocMemAddress = VirtualAllocEx(procHandle, IntPtr.Zero, (uint)((dllName.Length + 1) * Marshal.SizeOf(typeof(char))), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+            IntPtr allocMemAddress = VirtualAllocEx(procHandle, IntPtr.Zero, (uint)(dllNameBytes.Length), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
             // writing the name of the dll there
             UIntPtr bytesWritten;
-            WriteProcessMemory(procHandle, allocMemAddress, Encoding.Default.GetBytes(dllName), (uint)((dllName.Length + 1) * Marshal.SizeOf(typeof(char))), out bytesWritten);
+            WriteProcessMemory(procHandle, allocMemAddress, dllNameBytes, (uint)(dllNameBytes.Length), out bytesWritten);
 
             // creating a thread that will call LoadLibraryA with allocMemAddress as argument
             // All that's needed for 32 bit injection is the right library address... How hard can it be?
