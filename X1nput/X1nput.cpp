@@ -24,7 +24,8 @@ enum TriggerMotorLink
 {
 	RIGHT, // High frequency rumble
 	LEFT, // Low frequency rumble
-	BOTH // Sometimes games don't use high frequency rumble
+	BOTH, // Sometimes games don't use high frequency rumble
+	AUTO, // Detect both motors and choose higher speed
 };
 
 TriggerMotorLink RTriggerLink = BOTH;
@@ -41,6 +42,10 @@ float ApplyTriggerMotorStrength(TriggerMotorLink link, float leftSpeed, float ri
 			return leftSpeed * strength;
 			break;
 
+		case AUTO:
+			return std::max(rightSpeed, leftSpeed) * strength;
+			break;
+	
 		default:
 			return (leftSpeed + rightSpeed) * strength / 2.0f;
 			break;
