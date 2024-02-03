@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
@@ -83,6 +85,9 @@ namespace X1nputConfigurator
             OverrideConfig.IsChecked = Settings.Default.OverrideConfig;
 
             InitializeTimer(300);
+
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
+            if (key.GetValue("Launch X1nput on computer start") != null) AutoLaunch.IsChecked = true;
         }
 
         void RefreshProcesses()
@@ -315,6 +320,22 @@ namespace X1nputConfigurator
         {
             if (AutoInject.IsChecked == true) _timer.Start();
             else _timer.Stop();
+        }
+
+        private void AutoLaunch_Click(object sender, RoutedEventArgs e)
+        {
+            if (AutoLaunch.IsChecked == true)
+            {
+                RegistryKey saveKey = Registry.LocalMachine.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
+                saveKey.SetValue("Launch X1nput on computer start", Assembly.GetExecutingAssembly().Location);
+                saveKey.Close();
+            }
+            else
+            {
+                RegistryKey deleteKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                deleteKey.DeleteValue("Launch X1nput on computer start");
+                deleteKey.Close();
+            }
         }
     }
 }
