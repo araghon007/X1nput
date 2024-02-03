@@ -79,6 +79,7 @@
                         </Button.ToolTip>
                     </Button>
                 </Grid>
+                <CheckBox x:Name="AutoInject" Content="Auto-Inject (5 minutes)" IsChecked="True" HorizontalAlignment="Left" Margin="20,-7,0,0" VerticalAlignment="Top" Click="AutoInject_Click"/>
             </Grid>
         </Grid>
     </Grid>
