@@ -36,6 +36,8 @@ namespace X1nputConfigurator
 
         private DispatcherTimer _timer;
         private TimeSpan _time;
+        private const string _startupValue = "Launch X1nput on computer start";
+        private const string _startupPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
         private void InitializeTimer(int duration)
         {
@@ -86,8 +88,8 @@ namespace X1nputConfigurator
 
             InitializeTimer(300);
 
-            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-            if (key.GetValue("Launch X1nput on computer start") != null) AutoLaunch.IsChecked = true;
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(_startupPath);
+            if (key.GetValue(_startupValue) != null) AutoLaunch.IsChecked = true;
         }
 
         void RefreshProcesses()
@@ -326,14 +328,14 @@ namespace X1nputConfigurator
         {
             if (AutoLaunch.IsChecked == true)
             {
-                RegistryKey saveKey = Registry.LocalMachine.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-                saveKey.SetValue("Launch X1nput on computer start", Assembly.GetExecutingAssembly().Location);
+                RegistryKey saveKey = Registry.LocalMachine.CreateSubKey(_startupPath);
+                saveKey.SetValue(_startupValue, Assembly.GetExecutingAssembly().Location);
                 saveKey.Close();
             }
             else
             {
-                RegistryKey deleteKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-                deleteKey.DeleteValue("Launch X1nput on computer start");
+                RegistryKey deleteKey = Registry.LocalMachine.OpenSubKey(_startupPath, true);
+                deleteKey.DeleteValue(_startupValue);
                 deleteKey.Close();
             }
         }
