@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using X1nputConfigurator.Misc;
 using X1nputConfigurator.Properties;
 
@@ -31,11 +34,62 @@ namespace X1nputConfigurator
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
 
+        private DispatcherTimer _timer;
+        private TimeSpan _time;
+        private const string _startupValue = "Launch X1nput on computer start";
+        private const string _startupPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+        private void InitializeTimer(int duration)
+        {
+            _time = TimeSpan.FromSeconds(duration);
+            _timer = new DispatcherTimer(new TimeSpan(0, 0, 1), DispatcherPriority.Normal, delegate
+            {
+                if (_time == TimeSpan.Zero)
+                {
+                    TimerTick();
+                    _time = TimeSpan.FromSeconds(duration);
+                }
+                _time = _time.Add(TimeSpan.FromSeconds(-1));
+            }, Application.Current.Dispatcher);
+            _timer.Start();
+        }
+
+        private void TimerTick()
+        {
+            RefreshProcesses();
+            while (Processes.Items.Count > 0)
+            {
+                var sel = 0;
+                var process = foundProcesses[sel];
+
+                CopyConfig(process.Process);
+
+                if (Injector.Inject(process))
+                {
+                    foundProcesses.RemoveAt(sel);
+                    Processes.Items.RemoveAt(sel);
+
+                    var proc = new ListBoxItem
+                    {
+                        Content = process.Process.ProcessName,
+                    };
+
+                    injectedProcesses.Add(process);
+                    InjectedProcesses.Items.Add(proc);
+                }
+            }
+        }
+
         public MainWindow()
         {
             InitializeComponent();
 
             OverrideConfig.IsChecked = Settings.Default.OverrideConfig;
+
+            InitializeTimer(300);
+
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(_startupPath);
+            if (key.GetValue(_startupValue) != null) AutoLaunch.IsChecked = true;
         }
 
         void RefreshProcesses()
@@ -262,6 +316,28 @@ namespace X1nputConfigurator
         {
             Settings.Default.OverrideConfig = OverrideConfig.IsChecked ?? false;
             Settings.Default.Save();
+        }
+
+        private void AutoInject_Click(object sender, RoutedEventArgs e)
+        {
+            if (AutoInject.IsChecked == true) _timer.Start();
+            else _timer.Stop();
+        }
+
+        private void AutoLaunch_Click(object sender, RoutedEventArgs e)
+        {
+            if (AutoLaunch.IsChecked == true)
+            {
+                RegistryKey saveKey = Registry.LocalMachine.CreateSubKey(_startupPath);
+                saveKey.SetValue(_startupValue, Assembly.GetExecutingAssembly().Location);
+                saveKey.Close();
+            }
+            else
+            {
+                RegistryKey deleteKey = Registry.LocalMachine.OpenSubKey(_startupPath, true);
+                deleteKey.DeleteValue(_startupValue);
+                deleteKey.Close();
+            }
         }
     }
 }
