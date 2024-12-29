@@ -27,7 +27,7 @@
                     <ColumnDefinition/>
                     <ColumnDefinition Width="80"/>
                 </Grid.ColumnDefinitions>
-                <ListBox Grid.Column="0" Name="Processes" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20"/>
+                <ListBox Grid.Column="0" Name="Processes" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20" MouseDoubleClick="Processes_MouseDoubleClick"/>
                 <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="40"/>
@@ -60,7 +60,7 @@
                     <ColumnDefinition/>
                     <ColumnDefinition Width="80"/>
                 </Grid.ColumnDefinitions>
-                <ListBox Grid.Column="0" Name="InjectedProcesses" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20"/>
+                <ListBox Grid.Column="0" Name="InjectedProcesses" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20" MouseDoubleClick="InjectedProcesses_MouseDoubleClick"/>
                 <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="40"/>
@@ -79,6 +79,8 @@
                         </Button.ToolTip>
                     </Button>
                 </Grid>
+                <CheckBox x:Name="AutoInject" Content="Auto-Inject (5 minutes)" IsChecked="True" HorizontalAlignment="Left" Margin="20,-7,0,0" VerticalAlignment="Top" Click="AutoInject_Click"/>
+                <CheckBox x:Name="AutoLaunch" Content="Launch X1nput on computer start" HorizontalAlignment="Left" Margin="180,-7,0,0" VerticalAlignment="Top" Click="AutoLaunch_Click" />
             </Grid>
         </Grid>
     </Grid>
